@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тренажер Ритму для Барабанів | Rankova Studio</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            -webkit-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+        .drum-part {
+            cursor: pointer;
+            transition: all 0.1s ease-in-out;
+        }
+        .drum-part path, .drum-part circle, .drum-part ellipse {
+            fill: var(--drum-fill-color, #27272a); /* Default dark silhouette */
+            stroke: var(--drum-stroke-color, #52525b);
+            stroke-width: 1;
+            transition: fill 0.2s ease, stroke 0.2s ease;
+        }
+        .drum-part .drum-label {
+            fill: white;
+            font-weight: 700;
+            font-size: 10px;
+            text-anchor: middle;
+            pointer-events: none;
+        }
+        .drum-part.playing path, .drum-part.playing circle, .drum-part.playing ellipse {
+            fill: #ffd200; /* Yellow highlight on playing */
+            stroke: #e6be00;
+        }
+         .drum-part.playing {
+            transform-origin: center;
+            transform: scale(1.03);
+        }
+
+        .pro-button {
+            transition: all 0.2s ease-in-out;
+            border-radius: 8px;
+            padding: 10px 20px;
+            font-weight: 600;
+            cursor: pointer;
+            background-color: #ffd200;
+            color: #1e293b;
+            border: none;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+        }
+        .pro-button:hover:not(:disabled) {
+            background-color: #e6be00;
+        }
+        .pro-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        .beat-indicator {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            transition: all 0.2s;
+        }
+        .difficulty-btn {
+            padding: 8px 16px;
+            border-radius: 8px;
+            border: 1px solid #cbd5e1;
+            color: #475569;
+            background-color: #f1f5f9;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        .difficulty-btn.active {
+            background-color: #ffd200;
+            color: #1e293b;
+            border-color: #ffd200;
+        }
+        .difficulty-btn:not(.active):hover {
+            background-color: #e2e8f0;
+        }
+    </style>
+</head>
+<body class="bg-slate-100 flex items-center justify-center min-h-screen p-4">
+
+    <div class="container mx-auto text-center max-w-md">
+        <div class="bg-white rounded-2xl shadow-xl p-6 md:p-8">
+            <img src="https://i.ibb.co/4R9f3N6m/Rankova-logo.png" alt="Логотип" class="mx-auto mb-4 h-20">
+            <h1 class="text-3xl md:text-4xl font-bold text-slate-800 mb-2">Тренажер Ритму</h1>
+            <p class="text-slate-500 mb-6">Слухай, запам'ятовуй та повторюй ритм!</p>
+            
+            <div class="flex items-center justify-between bg-slate-100 rounded-lg p-3 mb-4">
+                <div class="text-left">
+                    <p class="text-sm font-medium text-slate-500">РАХУНОК</p>
+                    <p id="score" class="text-3xl font-bold" style="color: #ffd200;">0</p>
+                </div>
+                <div class="flex items-center gap-x-2">
+                    <button id="restartBtn" class="pro-button">Рестарт</button>
+                    <button id="startBtn" class="pro-button">Почати</button>
+                </div>
+            </div>
+
+             <div class="flex justify-center gap-x-2 mb-4">
+                <button class="difficulty-btn active" data-difficulty="easy">Легко</button>
+                <button class="difficulty-btn" data-difficulty="medium">Середнє</button>
+                <button class="difficulty-btn" data-difficulty="hard">Складно</button>
+            </div>
+            
+            <div class="bg-slate-50 rounded-lg p-3 mb-4 text-center">
+                 <div class="flex justify-center items-center gap-x-3 h-8" id="beat-pattern-container">
+                 </div>
+                 <button id="toggle-visual" class="text-xs text-slate-400 hover:text-slate-600 mt-2">Сховати візуалізацію</button>
+            </div>
+
+            <p id="message" class="h-6 mb-4 text-lg font-semibold text-slate-700">Натисни "Почати", щоб грати</p>
+            
+            <div class="relative w-full h-64 md:h-72 my-4">
+                <svg id="drum-kit-svg" class="w-full h-full" viewBox="0 0 300 200" preserveAspectRatio="xMidYMin meet">
+                    <!-- Stands (non-interactive) --><g stroke="#a1a1aa" stroke-width="2.5" fill="none">
+                        <path d="M 80 80 L 60 180 M 100 180 L 60 180"/>
+                        <path d="M 220 75 L 200 170 M 240 170 L 200 170"/>
+                        <path d="M 150 185 L 120 195 M 150 185 L 180 195"/>
+                    </g>
+                    <!-- Tom --><g id="tom" class="drum-part">
+                        <ellipse cx="125" cy="90" rx="30" ry="22"/>
+                        <text class="drum-label" x="125" y="93">Tom</text>
+                    </g>
+                    <!-- Hi-Hat --><g id="hi-hat" class="drum-part">
+                        <ellipse cx="80" cy="75" rx="45" ry="10"/>
+                         <text class="drum-label" x="80" y="78">Hi-Hat</text>
+                    </g>
+                    <!-- Snare --><g id="snare" class="drum-part">
+                        <ellipse cx="200" cy="115" rx="35" ry="25"/>
+                         <text class="drum-label" x="200" y="118">Snare</text>
+                    </g>
+                     <!-- Kick --><g id="kick" class="drum-part">
+                       <circle cx="150" cy="140" r="45"/>
+                        <text class="drum-label" x="150" y="143">Kick</text>
+                    </g>
+                </svg>
+            </div>
+
+            <div class="mt-8">
+                <a href="https://n813529.alteg.io" target="_blank" class="pro-button inline-block text-lg">Хочу прийти в Rankova Studio на урок</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let audioCtx;
+        const audioBuffers = {};
+        let soundsLoaded = false;
+
+        const DRUM_COLORS = {
+            'kick': { fill: '#dc2626', stroke: '#b91c1c' },
+            'snare': { fill: '#4f46e5', stroke: '#312e81' },
+            'hi-hat': { fill: '#facc15', stroke: '#eab308' },
+            'tom': { fill: '#16a34a', stroke: '#14532d' }
+        };
+        const SILHOUETTE_COLORS = { fill: '#27272a', stroke: '#52525b' };
+
+        function loadSound(name, url) {
+            return new Promise((resolve, reject) => {
+                if (!audioCtx) return reject('AudioContext not initialized');
+                fetch(url)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        return response.arrayBuffer();
+                    })
+                    .then(arrayBuffer => audioCtx.decodeAudioData(arrayBuffer, buffer => {
+                        audioBuffers[name] = buffer;
+                        resolve();
+                    }))
+                    .catch(e => reject(`Failed to load sound ${name}: ${e}`));
+            });
+        }
+
+        async function initAudio() {
+            if (soundsLoaded) return;
+            if (!audioCtx) {
+                try {
+                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                } catch(e) {
+                    console.error('Web Audio API is not supported in this browser');
+                    return Promise.reject(e);
+                }
+            }
+            if (audioCtx.state === 'suspended') {
+                await audioCtx.resume();
+            }
+            // NEW, reliable sound URLs with correct CORS headers
+            const soundUrls = {
+                'kick': 'https://raw.githubusercontent.com/wesbos/JavaScript30/master/01%20-%20JavaScript%20Drum%20Kit/sounds/kick.wav',
+                'snare': 'https://raw.githubusercontent.com/wesbos/JavaScript30/master/01%20-%20JavaScript%20Drum%20Kit/sounds/snare.wav',
+                'hi-hat': 'https://raw.githubusercontent.com/wesbos/JavaScript30/master/01%20-%20JavaScript%20Drum%20Kit/sounds/hihat.wav',
+                'tom': 'https://raw.githubusercontent.com/wesbos/JavaScript30/master/01%20-%20JavaScript%20Drum%20Kit/sounds/tom.wav'
+            };
+            const loadPromises = Object.keys(soundUrls).map(key => loadSound(key, soundUrls[key]));
+            await Promise.all(loadPromises);
+            soundsLoaded = true;
+        }
+
+        function playSound(name) {
+            if (!audioCtx || !audioBuffers[name]) { return; }
+            if (audioCtx.state === 'suspended') { audioCtx.resume(); }
+            const source = audioCtx.createBufferSource();
+            source.buffer = audioBuffers[name];
+            source.connect(audioCtx.destination);
+            source.start(0);
+        }
+
+        const drums = {
+            'kick': { el: document.getElementById('kick'), color: 'bg-red-500' },
+            'snare': { el: document.getElementById('snare'), color: 'bg-blue-500' },
+            'hi-hat': { el: document.getElementById('hi-hat'), color: 'bg-yellow-400' },
+            'tom': { el: document.getElementById('tom'), color: 'bg-green-500' }
+        };
+
+        const startBtn = document.getElementById('startBtn');
+        const restartBtn = document.getElementById('restartBtn');
+        const scoreEl = document.getElementById('score');
+        const messageEl = document.getElementById('message');
+        const beatPatternContainer = document.getElementById('beat-pattern-container');
+        const toggleVisualBtn = document.getElementById('toggle-visual');
+        const difficultyBtns = document.querySelectorAll('.difficulty-btn');
+
+        let sequence = [];
+        let playerSequence = [];
+        let score = 0;
+        let gameActive = false;
+        let visualHidden = false;
+        let currentDifficulty = 'easy';
+        const BEAT_SPEEDS = { easy: 600, medium: 450, hard: 300 };
+
+        function generateSequence() {
+            const drumKeys = Object.keys(drums);
+            const randomDrum = drumKeys[Math.floor(Math.random() * drumKeys.length)];
+            sequence.push(randomDrum);
+        }
+
+        function playSequence() {
+            gameActive = false;
+            messageEl.textContent = 'Слухай та запам\'ятовуй!';
+            let i = 0;
+            const interval = setInterval(() => {
+                if (i < sequence.length) {
+                    const drumName = sequence[i];
+                    animateDrum(drumName);
+                    playSound(drumName);
+                    i++;
+                } else {
+                    clearInterval(interval);
+                    gameActive = true;
+                    playerSequence = [];
+                    messageEl.textContent = 'Твоя черга!';
+                }
+            }, BEAT_SPEEDS[currentDifficulty]);
+        }
+        
+        function displayBeatPattern() {
+            beatPatternContainer.innerHTML = '';
+            if (visualHidden) return;
+            sequence.forEach(drumName => {
+                const indicator = document.createElement('div');
+                indicator.className = `beat-indicator ${drums[drumName].color}`;
+                beatPatternContainer.appendChild(indicator);
+            });
+        }
+
+        function animateDrum(name) {
+            const drumEl = drums[name].el;
+            drumEl.classList.add('playing');
+            setTimeout(() => { drumEl.classList.remove('playing'); }, 200);
+        }
+
+        function updateDrumColors(difficulty) {
+            Object.keys(drums).forEach(key => {
+                const drumEl = drums[key].el;
+                const pathElements = drumEl.querySelectorAll('path, circle, ellipse');
+                const fill = difficulty === 'hard' ? SILHOUETTE_COLORS.fill : DRUM_COLORS[key].fill;
+                const stroke = difficulty === 'hard' ? SILHOUETTE_COLORS.stroke : DRUM_COLORS[key].stroke;
+                pathElements.forEach(el => {
+                    el.style.setProperty('--drum-fill-color', fill);
+                    el.style.setProperty('--drum-stroke-color', stroke);
+                });
+            });
+        }
+        
+        function handleDrumClick(name) {
+            if (!gameActive) return;
+            animateDrum(name);
+            playSound(name);
+            playerSequence.push(name);
+            
+            const lastPlayerMoveIndex = playerSequence.length - 1;
+            if (playerSequence[lastPlayerMoveIndex] !== sequence[lastPlayerMoveIndex]) {
+                messageEl.textContent = 'Помилка! Спробуй цей ритм ще раз.';
+                gameActive = false;
+                setTimeout(() => { playSequence(); }, 1500);
+                return;
+            }
+
+            if (playerSequence.length === sequence.length) {
+                score++;
+                scoreEl.textContent = score;
+                messageEl.textContent = '🎉 Чудово! Наступний раунд...';
+                gameActive = false;
+                setTimeout(() => {
+                    generateSequence();
+                    displayBeatPattern();
+                    playSequence();
+                }, 1000);
+            }
+        }
+
+        async function startGame() {
+            startBtn.disabled = true;
+            startBtn.textContent = 'Завантаження...';
+            try {
+                await initAudio();
+            } catch (error) {
+                console.error("Failed to load audio:", error);
+                messageEl.textContent = 'Не вдалося завантажити звук.';
+                startBtn.disabled = false;
+                startBtn.textContent = 'Почати';
+                return;
+            }
+            
+            score = 0;
+            scoreEl.textContent = 0;
+            sequence = [];
+            playerSequence = [];
+            startBtn.textContent = 'Гра триває...';
+            restartBtn.disabled = false;
+            generateSequence();
+            displayBeatPattern();
+            playSequence();
+        }
+        
+        function resetGame() {
+            startBtn.disabled = false;
+            startBtn.textContent = 'Почати';
+            restartBtn.disabled = true;
+            gameActive = false;
+            score = 0;
+            scoreEl.textContent = 0;
+            sequence = [];
+            messageEl.textContent = 'Натисни "Почати", щоб грати';
+            beatPatternContainer.innerHTML = '';
+        }
+
+        Object.keys(drums).forEach(key => {
+            drums[key].el.addEventListener('click', () => handleDrumClick(key));
+        });
+
+        startBtn.addEventListener('click', startGame);
+        restartBtn.addEventListener('click', resetGame);
+        
+        difficultyBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                difficultyBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentDifficulty = btn.dataset.difficulty;
+                updateDrumColors(currentDifficulty);
+                if(startBtn.disabled) resetGame();
+            });
+        });
+        
+        toggleVisualBtn.addEventListener('click', () => {
+            visualHidden = !visualHidden;
+            if (visualHidden) {
+                beatPatternContainer.style.visibility = 'hidden';
+                toggleVisualBtn.textContent = 'Показати візуалізацію';
+            } else {
+                beatPatternContainer.style.visibility = 'visible';
+                toggleVisualBtn.textContent = 'Сховати візуалізацію';
+                displayBeatPattern();
+            }
+        });
+
+        updateDrumColors(currentDifficulty);
+    </script>
+</body>
+</html>
+
