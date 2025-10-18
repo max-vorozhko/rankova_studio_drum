@@ -13,30 +13,31 @@
             -ms-user-select: none;
             user-select: none;
         }
+        .main-container {
+            position: relative; /* Needed for sticker positioning */
+            overflow: hidden; /* Keeps sticker within bounds */
+        }
         .drum-part {
             cursor: pointer;
-            transition: all 0.1s ease-in-out;
+            transition: transform 0.1s ease-in-out;
+            transform-origin: center center;
         }
-        .drum-part path, .drum-part circle, .drum-part ellipse {
-            fill: var(--drum-fill-color, #27272a); /* Default dark silhouette */
-            stroke: var(--drum-stroke-color, #52525b);
-            stroke-width: 1;
-            transition: fill 0.2s ease, stroke 0.2s ease;
+        .drum-part .drum-shape {
+             transition: fill 0.1s ease-in-out;
         }
         .drum-part .drum-label {
             fill: white;
             font-weight: 700;
-            font-size: 10px;
+            font-size: 14px;
             text-anchor: middle;
             pointer-events: none;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
         }
-        .drum-part.playing path, .drum-part.playing circle, .drum-part.playing ellipse {
-            fill: #ffd200; /* Yellow highlight on playing */
-            stroke: #e6be00;
+        .drum-part.playing {
+            transform: scale(1.05);
         }
-         .drum-part.playing {
-            transform-origin: center;
-            transform: scale(1.03);
+        .drum-part.playing .drum-shape {
+            filter: brightness(1.2);
         }
 
         .pro-button {
@@ -81,12 +82,30 @@
         .difficulty-btn:not(.active):hover {
             background-color: #e2e8f0;
         }
+
+        /* Sticker styles -- NEW ANIMATION */
+        #sticker-container {
+            position: absolute;
+            top: 63%;
+            right: 10px; /* Final horizontal position */
+            width: 200px;
+            height: auto;
+            z-index: 1000;
+            pointer-events: none;
+            opacity: 0; /* Start invisible */
+            transform: translate(calc(100% + 20px), -50%); /* Start off-screen and vertically centered */
+            transition: transform 0.5s ease-in-out, opacity 0.5s ease-in-out;
+        }
+        #sticker-container.visible {
+            opacity: 1; /* Fade in */
+            transform: translate(0, -50%); /* Slide to final position */
+        }
     </style>
 </head>
 <body class="bg-slate-100 flex items-center justify-center min-h-screen p-4">
 
     <div class="container mx-auto text-center max-w-md">
-        <div class="bg-white rounded-2xl shadow-xl p-6 md:p-8">
+        <div class="bg-white rounded-2xl shadow-xl p-6 md:p-8 main-container">
             <img src="https://github.com/max-vorozhko/rankova_studio_drum/blob/main/Rankova%20logo.png?raw=true" alt="Логотип" class="mx-auto mb-4 h-20">
             <h1 class="text-3xl md:text-4xl font-bold text-slate-800 mb-2">Тренажер Ритму</h1>
             <p class="text-slate-500 mb-6">Слухай, запам'ятовуй та повторюй ритм!</p>
@@ -118,26 +137,31 @@
             
             <div class="relative w-full h-64 md:h-72 my-4">
                 <svg id="drum-kit-svg" class="w-full h-full" viewBox="0 0 300 200" preserveAspectRatio="xMidYMin meet">
-                    <!-- Stands (non-interactive) --><g stroke="#a1a1aa" stroke-width="2.5" fill="none">
-                        <path d="M 80 80 L 60 180 M 100 180 L 60 180"/>
-                        <path d="M 220 75 L 200 170 M 240 170 L 200 170"/>
-                        <path d="M 150 185 L 120 195 M 150 185 L 180 195"/>
+                    <!-- Stands (decorative) -->
+                    <rect x="58" y="90" width="4" height="100" fill="#a1a1aa" rx="2"/>
+                    <rect x="158" y="185" width="80" height="4" fill="#a1a1aa" rx="2"/>
+
+                    <!-- Hi-Hat -->
+                    <g id="hi-hat" class="drum-part">
+                        <ellipse class="drum-shape" cx="60" cy="90" rx="50" ry="15" fill="#facc15"/>
+                        <text class="drum-label" x="60" y="94">Hi-Hat</text>
                     </g>
-                    <!-- Tom --><g id="tom" class="drum-part">
-                        <ellipse cx="125" cy="90" rx="30" ry="22"/>
-                        <text class="drum-label" x="125" y="93">Tom</text>
+                    <!-- Tom -->
+                    <g id="tom" class="drum-part">
+                        <path class="drum-shape" d="M 120,70 C 120,86 140,91 160,91 C 180,91 200,86 200,70 L 180,65 C 180,75 170,80 160,80 C 150,80 140,75 140,65 Z" fill="#16a34a"/>
+                        <ellipse class="drum-shape" cx="160" cy="70" rx="40" ry="15" fill="#e0f2f1"/>
+                        <text class="drum-label" x="160" y="74" fill="#1e293b">Tom</text>
                     </g>
-                    <!-- Hi-Hat --><g id="hi-hat" class="drum-part">
-                        <ellipse cx="80" cy="75" rx="45" ry="10"/>
-                         <text class="drum-label" x="80" y="78">Hi-Hat</text>
+                     <!-- Kick -->
+                    <g id="kick" class="drum-part">
+                       <circle class="drum-shape" cx="200" cy="135" r="55" fill="#dc2626"/>
+                       <text class="drum-label" x="200" y="139">Kick</text>
                     </g>
-                    <!-- Snare --><g id="snare" class="drum-part">
-                        <ellipse cx="200" cy="115" rx="35" ry="25"/>
-                         <text class="drum-label" x="200" y="118">Snare</text>
-                    </g>
-                     <!-- Kick --><g id="kick" class="drum-part">
-                       <circle cx="150" cy="140" r="45"/>
-                        <text class="drum-label" x="150" y="143">Kick</text>
+                    <!-- Snare -->
+                    <g id="snare" class="drum-part">
+                        <path class="drum-shape" d="M 80,130 C 80,151 105,161 130,161 C 155,161 180,151 180,130 L 160,125 C 160,141 145,145 130,145 C 115,145 100,141 100,125 Z" fill="#4f46e5"/>
+                        <ellipse class="drum-shape" cx="130" cy="130" rx="50" ry="20" fill="#e0e7ff"/>
+                        <text class="drum-label" x="130" y="134" fill="#1e293b">Snare</text>
                     </g>
                 </svg>
             </div>
@@ -145,30 +169,31 @@
             <div class="mt-8">
                 <a href="https://n813529.alteg.io" target="_blank" class="pro-button inline-block text-lg">Хочу прийти в Rankova Studio на урок</a>
             </div>
+            
+            <!-- Sticker Container is now inside the main container -->
+            <div id="sticker-container"></div>
         </div>
     </div>
-
+    
     <script>
         let audioCtx;
         const audioBuffers = {};
         let soundsLoaded = false;
+        let stickerVisible = false;
 
-        const DRUM_COLORS = {
-            'kick': { fill: '#dc2626', stroke: '#b91c1c' },
-            'snare': { fill: '#4f46e5', stroke: '#312e81' },
-            'hi-hat': { fill: '#facc15', stroke: '#eab308' },
-            'tom': { fill: '#16a34a', stroke: '#14532d' }
+        const DRUM_COLORS = { // Only used for beat indicators now
+            'kick': { color: 'bg-red-500' },
+            'snare': { color: 'bg-blue-500' },
+            'hi-hat': { color: 'bg-yellow-400' },
+            'tom': { color: 'bg-green-500' }
         };
-        const SILHOUETTE_COLORS = { fill: '#27272a', stroke: '#52525b' };
-
+        
         function loadSound(name, url) {
             return new Promise((resolve, reject) => {
                 if (!audioCtx) return reject('AudioContext not initialized');
                 fetch(url)
                     .then(response => {
-                        if (!response.ok) {
-                            throw new Error(`HTTP error! status: ${response.status}`);
-                        }
+                        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
                         return response.arrayBuffer();
                     })
                     .then(arrayBuffer => audioCtx.decodeAudioData(arrayBuffer, buffer => {
@@ -192,7 +217,6 @@
             if (audioCtx.state === 'suspended') {
                 await audioCtx.resume();
             }
-            // NEW, reliable sound URLs with correct CORS headers
             const soundUrls = {
                 'kick': 'https://raw.githubusercontent.com/wesbos/JavaScript30/master/01%20-%20JavaScript%20Drum%20Kit/sounds/kick.wav',
                 'snare': 'https://raw.githubusercontent.com/wesbos/JavaScript30/master/01%20-%20JavaScript%20Drum%20Kit/sounds/snare.wav',
@@ -214,10 +238,10 @@
         }
 
         const drums = {
-            'kick': { el: document.getElementById('kick'), color: 'bg-red-500' },
-            'snare': { el: document.getElementById('snare'), color: 'bg-blue-500' },
-            'hi-hat': { el: document.getElementById('hi-hat'), color: 'bg-yellow-400' },
-            'tom': { el: document.getElementById('tom'), color: 'bg-green-500' }
+            'kick': { el: document.getElementById('kick')},
+            'snare': { el: document.getElementById('snare')},
+            'hi-hat': { el: document.getElementById('hi-hat')},
+            'tom': { el: document.getElementById('tom')}
         };
 
         const startBtn = document.getElementById('startBtn');
@@ -227,6 +251,7 @@
         const beatPatternContainer = document.getElementById('beat-pattern-container');
         const toggleVisualBtn = document.getElementById('toggle-visual');
         const difficultyBtns = document.querySelectorAll('.difficulty-btn');
+        const stickerContainer = document.getElementById('sticker-container');
 
         let sequence = [];
         let playerSequence = [];
@@ -235,6 +260,22 @@
         let visualHidden = false;
         let currentDifficulty = 'easy';
         const BEAT_SPEEDS = { easy: 600, medium: 450, hard: 300 };
+
+        const STICKER_SCORE_THRESHOLD = 10; // Score to show sticker (for testing)
+
+        function showSticker() {
+            if (!stickerVisible) {
+                stickerContainer.innerHTML = `
+                    <img src="https://github.com/max-vorozhko/rankova_studio_drum/blob/main/IMG_0817-removebg-preview_wipe_bg.png?raw=true" alt="Awesome!" class="w-full h-auto">
+                `;
+                stickerContainer.classList.add('visible');
+                stickerVisible = true;
+                setTimeout(() => {
+                    stickerContainer.classList.remove('visible');
+                    setTimeout(() => { stickerVisible = false; }, 500); // Wait for animation to finish before resetting flag
+                }, 2500); // Sticker visible for 2.5 seconds before starting to hide (total 3s animation)
+            }
+        }
 
         function generateSequence() {
             const drumKeys = Object.keys(drums);
@@ -266,7 +307,7 @@
             if (visualHidden) return;
             sequence.forEach(drumName => {
                 const indicator = document.createElement('div');
-                indicator.className = `beat-indicator ${drums[drumName].color}`;
+                indicator.className = `beat-indicator ${DRUM_COLORS[drumName].color}`;
                 beatPatternContainer.appendChild(indicator);
             });
         }
@@ -275,19 +316,6 @@
             const drumEl = drums[name].el;
             drumEl.classList.add('playing');
             setTimeout(() => { drumEl.classList.remove('playing'); }, 200);
-        }
-
-        function updateDrumColors(difficulty) {
-            Object.keys(drums).forEach(key => {
-                const drumEl = drums[key].el;
-                const pathElements = drumEl.querySelectorAll('path, circle, ellipse');
-                const fill = difficulty === 'hard' ? SILHOUETTE_COLORS.fill : DRUM_COLORS[key].fill;
-                const stroke = difficulty === 'hard' ? SILHOUETTE_COLORS.stroke : DRUM_COLORS[key].stroke;
-                pathElements.forEach(el => {
-                    el.style.setProperty('--drum-fill-color', fill);
-                    el.style.setProperty('--drum-stroke-color', stroke);
-                });
-            });
         }
         
         function handleDrumClick(name) {
@@ -307,6 +335,9 @@
             if (playerSequence.length === sequence.length) {
                 score++;
                 scoreEl.textContent = score;
+                if (score === STICKER_SCORE_THRESHOLD) {
+                    showSticker();
+                }
                 messageEl.textContent = '🎉 Чудово! Наступний раунд...';
                 gameActive = false;
                 setTimeout(() => {
@@ -351,6 +382,8 @@
             sequence = [];
             messageEl.textContent = 'Натисни "Почати", щоб грати';
             beatPatternContainer.innerHTML = '';
+            stickerContainer.classList.remove('visible'); // Hide sticker on restart
+            stickerVisible = false;
         }
 
         Object.keys(drums).forEach(key => {
@@ -365,7 +398,6 @@
                 difficultyBtns.forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
                 currentDifficulty = btn.dataset.difficulty;
-                updateDrumColors(currentDifficulty);
                 if(startBtn.disabled) resetGame();
             });
         });
@@ -382,8 +414,9 @@
             }
         });
 
-        updateDrumColors(currentDifficulty);
     </script>
 </body>
 </html>
+
+
 
