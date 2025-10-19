@@ -285,7 +285,6 @@
         async function init() {
             try {
                 await signInAnonymously(auth);
-                console.log("Anonymous sign-in successful.");
             } catch (error) {
                 console.error("Anonymous sign-in failed:", error);
                 handleAuthFailure();
@@ -389,15 +388,10 @@
             elements.saveScoreModal.classList.add('visible');
             elements.messageEl.textContent = 'Час вийшов!';
         }
-
-        function nextRound() {
-            if (!gameActive) return;
+        
+        function playCurrentSequence() {
+            gameActive = false; // Block input while playing sequence
             playerSequence = [];
-            const drumKeys = Object.keys(drums);
-            const randomDrum = drumKeys[Math.floor(Math.random() * drumKeys.length)];
-            sequence.push(randomDrum);
-            displayBeatPattern();
-            
             elements.messageEl.textContent = 'Слухай!';
             let i = 0;
             const sequenceInterval = setInterval(() => {
@@ -408,29 +402,43 @@
                 } else {
                     clearInterval(sequenceInterval);
                     elements.messageEl.textContent = 'Твоя черга!';
+                    gameActive = true; // Allow input after sequence is played
                 }
             }, BEAT_SPEEDS[currentDifficulty]);
         }
 
+
+        function nextRound() {
+            if (!gameActive) return;
+            const drumKeys = Object.keys(drums);
+            const randomDrum = drumKeys[Math.floor(Math.random() * drumKeys.length)];
+            sequence.push(randomDrum);
+            displayBeatPattern();
+            playCurrentSequence();
+        }
+
         function handleDrumClick(name) {
-            if (!gameActive || playerSequence.length >= sequence.length) return;
+            if (!gameActive) return;
+            
             animateDrum(name);
             playSound(name);
             playerSequence.push(name);
             
-            if (playerSequence[playerSequence.length - 1] !== sequence[playerSequence.length - 1]) {
-                elements.messageEl.textContent = 'Помилка! Спробуй ще раз.';
-                 setTimeout(() => {
-                    if (gameActive) nextRound();
-                }, 1000); 
-                return;
-            }
+            const currentMoveIndex = playerSequence.length - 1;
 
-            if (playerSequence.length === sequence.length) {
+            // BUG FIX: Use if/else if to prevent checking for success after a failure on the same click.
+            if (playerSequence[currentMoveIndex] !== sequence[currentMoveIndex]) {
+                gameActive = false; // Immediately disable further clicks
+                elements.messageEl.textContent = 'Помилка! Слухай ще раз.';
+                setTimeout(() => {
+                    playCurrentSequence(); // Replay the same sequence
+                }, 1000); 
+            } else if (playerSequence.length === sequence.length) {
+                gameActive = false; // Immediately disable further clicks
                 score++;
                 elements.scoreEl.textContent = score;
                 setTimeout(() => {
-                    if (gameActive) nextRound();
+                    nextRound(); // If correct and sequence is complete, proceed
                 }, 200);
             }
         }
