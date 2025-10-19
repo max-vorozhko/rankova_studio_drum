@@ -36,9 +36,30 @@
         .drum-part.playing {
             transform: scale(1.05);
         }
-        .drum-part.playing .drum-shape {
-            filter: brightness(1.2);
+        
+        /* Default Drum Colors */
+        #hi-hat .drum-shape { fill: #facc15; }
+        #tom path.drum-shape { fill: #16a34a; }
+        #tom ellipse.drum-shape { fill: #e0f2f1; }
+        #kick .drum-shape { fill: #dc2626; }
+        #snare path.drum-shape { fill: #4f46e5; }
+        #snare ellipse.drum-shape { fill: #e0e7ff; }
+
+        /* Hardcore Mode Styles */
+        .hardcore-mode .drum-part .drum-shape {
+            fill: #27272a !important; /* Dark gray for all shapes, !important to override specifics */
         }
+        .hardcore-mode .drum-part .drum-label {
+            /* Labels are now visible on hard mode */
+        }
+        /* Color flash on play for hardcore mode */
+        .hardcore-mode .drum-part#hi-hat.playing .drum-shape { fill: #facc15 !important; }
+        .hardcore-mode .drum-part#tom.playing path.drum-shape { fill: #16a34a !important; }
+        .hardcore-mode .drum-part#tom.playing ellipse.drum-shape { fill: #e0f2f1 !important; }
+        .hardcore-mode .drum-part#kick.playing .drum-shape { fill: #dc2626 !important; }
+        .hardcore-mode .drum-part#snare.playing path.drum-shape { fill: #4f46e5 !important; }
+        .hardcore-mode .drum-part#snare.playing ellipse.drum-shape { fill: #e0e7ff !important; }
+
 
         .pro-button {
             transition: all 0.2s ease-in-out;
@@ -135,10 +156,14 @@
                     </div>
                 </div>
 
-                 <div class="flex justify-center gap-x-2 mb-4">
+                 <div class="flex justify-center gap-x-2 mb-2">
                     <button class="difficulty-btn active" data-difficulty="easy">Легко</button>
                     <button class="difficulty-btn" data-difficulty="medium">Середнє</button>
                     <button class="difficulty-btn" data-difficulty="hard">Складно</button>
+                </div>
+
+                <div class="h-8 flex items-center justify-center">
+                    <button id="toggleVisualBtn" class="text-sm text-slate-500 hover:text-slate-700 transition-colors">Сховати візуалізацію</button>
                 </div>
                 
                  <div class="bg-slate-50 rounded-lg p-3 mb-4 text-center">
@@ -152,21 +177,21 @@
                         <rect x="58" y="90" width="4" height="100" fill="#a1a1aa" rx="2"/>
                         <rect x="158" y="185" width="80" height="4" fill="#a1a1aa" rx="2"/>
                         <g id="hi-hat" class="drum-part">
-                            <ellipse class="drum-shape" cx="60" cy="90" rx="50" ry="15" fill="#facc15"/>
+                            <ellipse class="drum-shape" cx="60" cy="90" rx="50" ry="15"/>
                             <text class="drum-label" x="60" y="94">Hi-Hat</text>
                         </g>
                         <g id="tom" class="drum-part">
-                            <path class="drum-shape" d="M 120,70 C 120,86 140,91 160,91 C 180,91 200,86 200,70 L 180,65 C 180,75 170,80 160,80 C 150,80 140,75 140,65 Z" fill="#16a34a"/>
-                            <ellipse class="drum-shape" cx="160" cy="70" rx="40" ry="15" fill="#e0f2f1"/>
+                            <path class="drum-shape" d="M 120,70 C 120,86 140,91 160,91 C 180,91 200,86 200,70 L 180,65 C 180,75 170,80 160,80 C 150,80 140,75 140,65 Z"/>
+                            <ellipse class="drum-shape" cx="160" cy="70" rx="40" ry="15"/>
                             <text class="drum-label" x="160" y="74" fill="#1e293b">Tom</text>
                         </g>
                         <g id="kick" class="drum-part">
-                           <circle class="drum-shape" cx="200" cy="135" r="55" fill="#dc2626"/>
+                           <circle class="drum-shape" cx="200" cy="135" r="55"/>
                            <text class="drum-label" x="200" y="139">Kick</text>
                         </g>
                         <g id="snare" class="drum-part">
-                            <path class="drum-shape" d="M 80,130 C 80,151 105,161 130,161 C 155,161 180,151 180,130 L 160,125 C 160,141 145,145 130,145 C 115,145 100,141 100,125 Z" fill="#4f46e5"/>
-                            <ellipse class="drum-shape" cx="130" cy="130" rx="50" ry="20" fill="#e0e7ff"/>
+                            <path class="drum-shape" d="M 80,130 C 80,151 105,161 130,161 C 155,161 180,151 180,130 L 160,125 C 160,141 145,145 130,145 C 115,145 100,141 100,125 Z"/>
+                            <ellipse class="drum-shape" cx="130" cy="130" rx="50" ry="20"/>
                             <text class="drum-label" x="130" y="134" fill="#1e293b">Snare</text>
                         </g>
                     </svg>
@@ -248,10 +273,12 @@
             leaderboardList: document.getElementById('leaderboard-list'),
             saveScoreModal: document.getElementById('save-score-modal'), finalScoreEl: document.getElementById('final-score'),
             playerNameInput: document.getElementById('player-name'), saveScoreBtn: document.getElementById('save-score-btn'),
-            cancelSaveBtn: document.getElementById('cancel-save-btn')
+            cancelSaveBtn: document.getElementById('cancel-save-btn'),
+            toggleVisualBtn: document.getElementById('toggleVisualBtn'),
+            svgContainer: document.getElementById('drum-kit-svg')
         };
         
-        let sequence = [], playerSequence = [], score = 0, gameActive = false, timeLeft = 60;
+        let sequence = [], playerSequence = [], score = 0, gameActive = false, timeLeft = 60, visualsHidden = false;
         let currentDifficulty = 'easy';
         const BEAT_SPEEDS = { easy: 600, medium: 450, hard: 300 };
         
@@ -313,6 +340,7 @@
         
         function displayBeatPattern() {
             elements.beatPatternContainer.innerHTML = '';
+            if (visualsHidden) return;
             sequence.forEach(drumName => {
                 const indicator = document.createElement('div');
                 indicator.className = `beat-indicator ${DRUM_COLORS[drumName].color}`;
@@ -337,10 +365,11 @@
             score = 0;
             elements.scoreEl.textContent = 0;
             sequence = [];
-            timeLeft = 60; // Always 1 minute
+            timeLeft = 60;
             updateTimerDisplay(timeLeft);
             
             elements.difficultyBtns.forEach(b => b.disabled = true);
+            elements.toggleVisualBtn.disabled = true;
             elements.startBtn.textContent = 'Гра триває...';
             
             gameActive = true;
@@ -412,6 +441,7 @@
             elements.startBtn.disabled = false;
             elements.startBtn.textContent = 'Почати';
             elements.difficultyBtns.forEach(b => b.disabled = false);
+            elements.toggleVisualBtn.disabled = false;
             score = 0;
             elements.scoreEl.textContent = 0;
             timeLeft = 60;
@@ -489,7 +519,24 @@
                 elements.difficultyBtns.forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
                 currentDifficulty = btn.dataset.difficulty;
+                if (currentDifficulty === 'hard') {
+                    elements.svgContainer.classList.add('hardcore-mode');
+                } else {
+                    elements.svgContainer.classList.remove('hardcore-mode');
+                }
             }));
+
+            elements.toggleVisualBtn.addEventListener('click', () => {
+                visualsHidden = !visualsHidden;
+                if (visualsHidden) {
+                    elements.beatPatternContainer.style.visibility = 'hidden';
+                    elements.toggleVisualBtn.textContent = 'Показати візуалізацію';
+                } else {
+                    elements.beatPatternContainer.style.visibility = 'visible';
+                    elements.toggleVisualBtn.textContent = 'Сховати візуалізацію';
+                    displayBeatPattern();
+                }
+            });
 
             elements.leaderboardBtn.addEventListener('click', () => {
                 showView('leaderboard');
