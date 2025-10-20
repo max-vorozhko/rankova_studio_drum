@@ -130,6 +130,22 @@
             border-radius: 50%;
             transition: all 0.2s;
         }
+
+        /* NEW: Sticker Popup Styles */
+        #sticker-popup {
+            position: absolute;
+            top: 15%;
+            right: -2rem; /* Start slightly off to the side for effect */
+            opacity: 0;
+            transform: translateY(-50%) scale(0.5);
+            transition: opacity 0.4s ease-out, transform 0.4s ease-out;
+            pointer-events: none;
+            z-index: 100;
+        }
+        #sticker-popup.show {
+            opacity: 1;
+            transform: translateY(-50%) scale(1);
+        }
     </style>
 </head>
 <body class="bg-slate-100 flex items-center justify-center min-h-screen p-4">
@@ -195,6 +211,11 @@
                             <text class="drum-label" x="130" y="134" fill="#1e293b">Snare</text>
                         </g>
                     </svg>
+
+                    <!-- Sticker Popup -->
+                    <div id="sticker-popup">
+                        <img src="https://github.com/max-vorozhko/rankova_studio_drum/blob/main/IMG_0817-removebg-preview_wipe_bg.png?raw=true" alt="Стікер" class="h-60">
+                    </div>
                 </div>
 
                 <div class="mt-8 flex justify-between">
@@ -275,10 +296,12 @@
             playerNameInput: document.getElementById('player-name'), saveScoreBtn: document.getElementById('save-score-btn'),
             cancelSaveBtn: document.getElementById('cancel-save-btn'),
             toggleVisualBtn: document.getElementById('toggleVisualBtn'),
-            svgContainer: document.getElementById('drum-kit-svg')
+            svgContainer: document.getElementById('drum-kit-svg'),
+            stickerPopup: document.getElementById('sticker-popup')
         };
         
         let sequence = [], playerSequence = [], score = 0, gameActive = false, timeLeft = 60, visualsHidden = false;
+        let stickerShownThisGame = false;
         let currentDifficulty = 'easy';
         const BEAT_SPEEDS = { easy: 600, medium: 450, hard: 300 };
         
@@ -348,6 +371,7 @@
         }
 
         async function startGame() {
+            stickerShownThisGame = false; // Reset sticker status
             elements.startBtn.disabled = true;
             elements.startBtn.textContent = 'Завантаження...';
             if (!soundsLoaded) {
@@ -426,7 +450,6 @@
             
             const currentMoveIndex = playerSequence.length - 1;
 
-            // BUG FIX: Use if/else if to prevent checking for success after a failure on the same click.
             if (playerSequence[currentMoveIndex] !== sequence[currentMoveIndex]) {
                 gameActive = false; // Immediately disable further clicks
                 elements.messageEl.textContent = 'Помилка! Слухай ще раз.';
@@ -437,14 +460,25 @@
                 gameActive = false; // Immediately disable further clicks
                 score++;
                 elements.scoreEl.textContent = score;
+
+                if (score === 10 && !stickerShownThisGame) {
+                    stickerShownThisGame = true;
+                    elements.stickerPopup.classList.add('show');
+                    setTimeout(() => {
+                        elements.stickerPopup.classList.remove('show');
+                    }, 3000);
+                }
+
                 setTimeout(() => {
-                    nextRound(); // If correct and sequence is complete, proceed
+                    gameActive = true; 
+                    nextRound();
                 }, 200);
             }
         }
         
         function resetGame() {
             clearInterval(gameTimerInterval);
+            stickerShownThisGame = false;
             gameActive = false;
             elements.startBtn.disabled = false;
             elements.startBtn.textContent = 'Почати';
@@ -456,6 +490,7 @@
             updateTimerDisplay(timeLeft);
             elements.messageEl.textContent = 'Обери складність та натисни "Почати"';
             elements.saveScoreModal.classList.remove('visible');
+            elements.stickerPopup.classList.remove('show');
             elements.leaderboardView.classList.add('hidden');
             elements.gameView.classList.remove('hidden');
             elements.beatPatternContainer.innerHTML = '';
