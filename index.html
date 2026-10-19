@@ -1,632 +1,837 @@
 <!DOCTYPE html>
 <html lang="uk">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Тренажер Ритму для Барабанів | Rankova Studio</title>
-    <!-- ДОДАНО ФАВІКОН -->
-    <link rel="icon" type="image/png" href="https://github.com/max-vorozhko/rankova_studio_drum/blob/main/favicon.png?raw=true">
-    
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            -webkit-user-select: none;
-            -ms-user-select: none;
-            user-select: none;
-        }
-        .main-container {
-            position: relative;
-            overflow: hidden;
-        }
-        .drum-part {
-            cursor: pointer;
-            transition: transform 0.1s ease-in-out;
-            transform-origin: center center;
-        }
-        .drum-part .drum-shape {
-             transition: fill 0.1s ease-in-out, filter 0.1s ease-in-out;
-        }
-        .drum-part .drum-label {
-            fill: white;
-            font-weight: 700;
-            font-size: 14px;
-            text-anchor: middle;
-            pointer-events: none;
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
-        }
-        .drum-part.playing {
-            transform: scale(1.05);
-        }
-        
-        /* Default Drum Colors */
-        #hi-hat .drum-shape { fill: #facc15; }
-        #tom path.drum-shape { fill: #16a34a; }
-        #tom ellipse.drum-shape { fill: #e0f2f1; }
-        #kick .drum-shape { fill: #dc2626; }
-        #snare path.drum-shape { fill: #4f46e5; }
-        #snare ellipse.drum-shape { fill: #e0e7ff; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Повтори ритм Rankova</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="Гра Rankova Studio: послухай ритм на барабанах і повтори його в такт.">
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600&family=Jost:wght@500;600;700&display=swap">
+<style>
+/* Layout: one-screen phone app. Header, mode picker, HUD, dark stage with a top-down drum kit and the phrase as a row of beats, controls, footer links. Same family as the Drum Trainer. */
+:root {
+  --paper: #fbfaf6;
+  --card: #ffffff;
+  --ink: #1d1b17;
+  --muted: #6b665b;
+  --line: #e6e1d4;
+  --sun: #f4cc35;
+  --sun-soft: #fbedb4;
+  --on-sun: #1d1b17;
+  --stage: #1c1a16;
+  --stage-2: #2a2721;
+  --stage-ink: #f5f1e6;
+  --stage-muted: #a49e90;
+  --head: #efe9da;
+  --hihat: #f4cc35;
+  --snare: #5b58d8;
+  --tom: #2fa866;
+  --kick: #e4553d;
+  --good: #3fb36b;
+  --bad: #e05252;
+  --font-display: 'Jost', 'Futura', 'Century Gothic', system-ui, sans-serif;
+  --font-body: 'Golos Text', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --r: 14px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #13120f; --card: #1c1b17; --ink: #f2eee4; --muted: #a59f92; --line: #2e2b25;
+    --sun-soft: #3a3218; --stage: #0d0c0a; --stage-2: #1f1d19; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #13120f; --card: #1c1b17; --ink: #f2eee4; --muted: #a59f92; --line: #2e2b25;
+  --sun-soft: #3a3218; --stage: #0d0c0a; --stage-2: #1f1d19; color-scheme: dark;
+}
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+body {
+  margin: 0; background: var(--paper); color: var(--ink);
+  font-family: var(--font-body); font-size: 15px; line-height: 1.45;
+  -webkit-tap-highlight-color: transparent;
+}
+.app {
+  max-width: 480px; margin: 0 auto; min-height: 100%;
+  display: flex; flex-direction: column; gap: 12px;
+  padding-block: 12px 24px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  box-sizing: border-box;
+}
+.top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.top img { height: 38px; width: auto; display: block; }
+:root[data-theme="dark"] .top img { filter: brightness(0) invert(.92); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .top img { filter: brightness(0) invert(.92); } }
+.top .name { text-align: right; }
+.eyebrow { font-family: var(--font-display); font-weight: 600; font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+.top h1 { margin: 0; font-family: var(--font-display); font-weight: 700; font-size: 22px; line-height: 1.1; letter-spacing: .02em; }
+.back { color: var(--muted); font-size: 13px; text-decoration: none; }
+.back:hover { color: var(--ink); text-decoration: underline; }
 
-        /* Hardcore Mode Styles */
-        .hardcore-mode .drum-part .drum-shape {
-            fill: #27272a !important; /* Dark gray for all shapes, !important to override specifics */
-        }
-        .hardcore-mode .drum-part .drum-label {
-            /* Labels are now visible on hard mode */
-        }
-        /* Color flash on play for hardcore mode */
-        .hardcore-mode .drum-part#hi-hat.playing .drum-shape { fill: #facc15 !important; }
-        .hardcore-mode .drum-part#tom.playing path.drum-shape { fill: #16a34a !important; }
-        .hardcore-mode .drum-part#tom.playing ellipse.drum-shape { fill: #e0f2f1 !important; }
-        .hardcore-mode .drum-part#kick.playing .drum-shape { fill: #dc2626 !important; }
-        .hardcore-mode .drum-part#snare.playing path.drum-shape { fill: #4f46e5 !important; }
-        .hardcore-mode .drum-part#snare.playing ellipse.drum-shape { fill: #e0e7ff !important; }
+.modes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.mode {
+  appearance: none; border: 1px solid var(--line); background: var(--card); color: var(--ink);
+  border-radius: 12px; padding: 8px 8px 9px; text-align: left; cursor: pointer; font: inherit; min-width: 0;
+}
+.mode b { display: block; font-family: var(--font-display); font-weight: 600; font-size: 15px; line-height: 1.15; }
+.mode span { display: block; font-size: 12px; color: var(--muted); }
+.mode[aria-pressed="true"] { background: var(--sun); border-color: var(--sun); color: var(--on-sun); }
+.mode[aria-pressed="true"] span { color: var(--on-sun); opacity: .75; }
+.mode:disabled { opacity: .5; cursor: default; }
+.mode:focus-visible, .btn:focus-visible, .seg button:focus-visible, .toggle:focus-visible { outline: 3px solid var(--snare); outline-offset: 2px; }
 
+.hud { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.stat { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 6px 10px; min-width: 0; }
+.stat small { display: block; font-size: 11px; color: var(--muted); letter-spacing: .06em; text-transform: uppercase; }
+.stat output { display: block; font-family: var(--font-display); font-weight: 700; font-size: 20px; font-variant-numeric: tabular-nums; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.stat output.lives { color: var(--kick); font-size: 16px; line-height: 30px; letter-spacing: 0; overflow: visible; font-family: var(--font-body); }
+.lives .gone { color: var(--line); }
 
-        .pro-button {
-            transition: all 0.2s ease-in-out;
-            border-radius: 8px;
-            padding: 10px 20px;
-            font-weight: 600;
-            cursor: pointer;
-            background-color: #ffd200;
-            color: #1e293b;
-            border: none;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.15);
-        }
-        .pro-button:hover:not(:disabled) {
-            background-color: #e6be00;
-        }
-        .pro-button:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-        }
-        .difficulty-btn {
-            padding: 8px 16px;
-            border-radius: 8px;
-            border: 1px solid #cbd5e1;
-            color: #475569;
-            background-color: #f1f5f9;
-            font-weight: 500;
-            transition: all 0.2s ease;
-            cursor: pointer;
-        }
-        .difficulty-btn.active {
-            background-color: #ffd200;
-            color: #1e293b;
-            border-color: #ffd200;
-        }
-        .difficulty-btn:not(.active):hover {
-            background-color: #e2e8f0;
-        }
-        
-        .modal-overlay {
-            position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background-color: rgba(255, 255, 255, 0.95);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 2000;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.3s ease;
-        }
-        .modal-overlay.visible {
-            opacity: 1;
-            pointer-events: auto;
-        }
-        .leaderboard-entry {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 12px;
-            border-radius: 8px;
-        }
-        .leaderboard-entry:nth-child(even) {
-            background-color: #f8fafc;
-        }
-        .beat-indicator {
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            transition: all 0.2s;
-        }
+/* Stage */
+.stage { position: relative; border-radius: 18px; background: var(--stage); color: var(--stage-ink); padding: 14px 12px 12px; display: grid; gap: 10px; overflow: hidden; }
+.say { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; min-height: 30px; }
+.say b { font-family: var(--font-display); font-weight: 700; font-size: 22px; line-height: 1.2; }
+.say span { font-size: 13px; color: var(--stage-muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.kit { width: 100%; height: auto; display: block; touch-action: none; user-select: none; -webkit-user-select: none; }
+.drum { cursor: pointer; outline: none; }
+.drum .body { transition: transform .08s ease, filter .08s ease; transform-box: fill-box; transform-origin: center; }
+.drum .halo { opacity: 0; transition: opacity .25s ease; }
+.drum.lit .body { transform: scale(1.06); filter: brightness(1.25); }
+.drum.lit .halo { opacity: .9; transition: none; }
+.drum .expect { opacity: 0; }
+.drum.expected .expect { opacity: 1; animation: pulse .5s ease-in-out 3; }
+.drum:focus-visible .focus { opacity: 1; }
+.drum .focus { opacity: 0; }
+.kit text { font-family: var(--font-display); font-weight: 600; pointer-events: none; }
+.kit .lab { fill: var(--stage-ink); font-size: 14px; text-anchor: middle; letter-spacing: .02em; }
+.kit .num { fill: var(--stage); font-size: 13px; text-anchor: middle; dominant-baseline: central; }
+.kit.dim .drum .body { filter: saturate(.7) brightness(.85); }
+@keyframes pulse { 50% { opacity: .25; } }
 
-        /* NEW: Sticker Popup Styles */
-        #sticker-popup {
-            position: absolute;
-            top: 15%;
-            right: -2rem; /* Start slightly off to the side for effect */
-            opacity: 0;
-            transform: translateY(-50%) scale(0.5);
-            transition: opacity 0.4s ease-out, transform 0.4s ease-out;
-            pointer-events: none;
-            z-index: 100;
-        }
-        #sticker-popup.show {
-            opacity: 1;
-            transform: translateY(-50%) scale(1);
-        }
-    </style>
+.beats { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; min-height: 22px; padding: 2px 0; }
+.beat { width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--stage-2); background: transparent; box-sizing: border-box; position: relative; }
+.beat.hint { border-color: var(--c); opacity: .55; }
+.beat.now { border-color: var(--stage-ink); }
+.beat.on { background: var(--c); border-color: var(--c); opacity: 1; }
+.beat.done { background: var(--c); border-color: var(--c); }
+.beat.intime::after { content: ''; position: absolute; left: 50%; bottom: -7px; width: 4px; height: 4px; margin-left: -2px; border-radius: 50%; background: var(--sun); }
+.beat.wrong { background: var(--bad); border-color: var(--bad); }
+
+.sticker { position: absolute; right: -8px; bottom: 30px; width: 46%; max-width: 190px; pointer-events: none; opacity: 0; transform: translateX(40%) rotate(8deg); transition: transform .45s cubic-bezier(.2,1.4,.4,1), opacity .3s ease; }
+.sticker { visibility: hidden; }
+.sticker.show { visibility: visible; opacity: 1; transform: translateX(0) rotate(-4deg); }
+.sticker img { width: 100%; display: block; }
+.sticker p { margin: 0; text-align: center; font-family: var(--font-display); font-weight: 700; font-size: 16px; color: var(--sun); text-shadow: 0 2px 6px rgba(0,0,0,.8); }
+
+.controls { display: grid; grid-template-columns: 2fr 1fr; gap: 8px; }
+.btn {
+  appearance: none; border: 1px solid var(--line); background: var(--card); color: var(--ink);
+  border-radius: 12px; min-height: 46px; padding: 0 14px; font: 600 15px/1 var(--font-body); cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center; text-decoration: none; text-align: center;
+}
+.btn.primary { background: var(--sun); border-color: var(--sun); color: var(--on-sun); font-family: var(--font-display); font-size: 17px; letter-spacing: .02em; }
+.btn:disabled { opacity: .45; cursor: default; }
+.btn:not(:disabled):hover { filter: brightness(.97); }
+.opts { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+.status { margin: 0; font-size: 14px; color: var(--muted); min-width: 0; flex: 1 1 200px; }
+.toggle { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; color: var(--ink); cursor: pointer; background: none; border: 0; padding: 4px 0; font-family: inherit; }
+.toggle i { width: 34px; height: 20px; border-radius: 10px; background: var(--line); position: relative; transition: background .15s; flex: none; }
+.toggle i::after { content: ''; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: var(--card); box-shadow: 0 1px 2px rgba(0,0,0,.25); transition: left .15s; }
+.toggle[aria-checked="true"] i { background: var(--good); }
+.toggle[aria-checked="true"] i::after { left: 16px; }
+.links { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.links .wide { grid-column: 1 / -1; }
+
+.overlay {
+  position: fixed; inset: 0; z-index: 20; background: rgba(15, 13, 10, .55);
+  display: flex; align-items: center; justify-content: center;
+  padding: max(16px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) max(16px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
+}
+.panel { background: var(--card); color: var(--ink); border-radius: 20px; width: 100%; max-width: 420px; max-height: 100%; overflow-y: auto; padding: 20px; box-sizing: border-box; display: grid; gap: 14px; }
+.panel h2 { margin: 0; font-family: var(--font-display); font-weight: 700; font-size: 24px; text-wrap: balance; }
+.panel p { margin: 0; }
+.muted { color: var(--muted); font-size: 14px; }
+.big { font-family: var(--font-display); font-weight: 700; font-size: 48px; line-height: 1; font-variant-numeric: tabular-nums; }
+.big small { font-size: 18px; color: var(--muted); font-weight: 500; }
+.chips { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.chip { border-radius: 10px; background: var(--paper); border: 1px solid var(--line); padding: 6px 8px; }
+.chip small { display: block; font-size: 11px; color: var(--muted); }
+.chip b { font-family: var(--font-display); font-size: 18px; font-variant-numeric: tabular-nums; }
+.tips { margin: 0; padding: 12px 14px; border-radius: 12px; background: var(--sun-soft); display: grid; gap: 6px; list-style: none; font-size: 14px; }
+.row { display: flex; gap: 8px; flex-wrap: wrap; }
+.row > * { flex: 1 1 120px; }
+input[type="text"] {
+  font: inherit; color: var(--ink); background: var(--paper); border: 1px solid var(--line); border-radius: 10px;
+  min-height: 44px; padding: 0 12px; width: 100%; box-sizing: border-box;
+}
+input[type="text"]:focus-visible { outline: 3px solid var(--snare); outline-offset: 1px; }
+.err { color: var(--bad); font-size: 13px; min-height: 18px; }
+.seg { display: flex; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+.seg button { flex: 1; appearance: none; border: 0; background: transparent; color: var(--ink); font: 500 13px/1 var(--font-body); padding: 9px 6px; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+.board { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.board li { display: grid; grid-template-columns: 28px 1fr auto auto; gap: 10px; align-items: baseline; padding: 8px 6px; border-radius: 8px; font-variant-numeric: tabular-nums; }
+.board li:nth-child(odd) { background: var(--paper); }
+.board .rk { color: var(--muted); font-weight: 600; }
+.board .nm { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; }
+.board .ac { color: var(--muted); font-size: 13px; }
+.board .sc { font-family: var(--font-display); font-weight: 700; }
+.note { font-size: 12px; color: var(--muted); }
+@media (max-width: 380px) {
+  .mode b { font-size: 14px; }
+  .stat output { font-size: 17px; }
+  .say b { font-size: 19px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .drum .body, .drum .halo, .sticker, .toggle i, .toggle i::after { transition: none; }
+  .drum.expected .expect { animation: none; }
+}
+</style>
+
 </head>
-<body class="bg-slate-100 flex items-center justify-center min-h-screen p-4">
-
-    <div class="container mx-auto text-center max-w-md">
-        <div class="bg-white rounded-2xl shadow-xl p-6 md:p-8 main-container">
-            <!-- Game View -->
-            <div id="game-view">
-                <img src="https://github.com/max-vorozhko/rankova_studio_drum/blob/main/Rankova%20logo.png?raw=true" alt="Логотип" class="mx-auto mb-4 h-20">
-                <h1 class="text-3xl md:text-4xl font-bold text-slate-800 mb-2">Тренажер Ритму</h1>
-                <p class="text-slate-500 mb-6">Набери якомога більше балів за 1 хвилину!</p>
-                
-                <div class="flex items-center justify-between bg-slate-100 rounded-lg p-3 mb-4">
-                    <div class="text-left">
-                        <p class="text-sm font-medium text-slate-500">РАХУНОК</p>
-                        <p id="score" class="text-3xl font-bold" style="color: #ffd200;">0</p>
-                    </div>
-                     <div class="text-left">
-                        <p class="text-sm font-medium text-slate-500">ЧАС</p>
-                        <p id="timer" class="text-3xl font-bold text-slate-700">01:00</p>
-                    </div>
-                    <div class="flex items-center gap-x-2">
-                        <button id="startBtn" class="pro-button">Почати</button>
-                    </div>
-                </div>
-
-                 <div class="flex justify-center gap-x-2 mb-2">
-                    <button class="difficulty-btn active" data-difficulty="easy">Легко</button>
-                    <button class="difficulty-btn" data-difficulty="medium">Середнє</button>
-                    <button class="difficulty-btn" data-difficulty="hard">Складно</button>
-                </div>
-
-                <div class="h-8 flex items-center justify-center">
-                    <button id="toggleVisualBtn" class="text-sm text-slate-500 hover:text-slate-700 transition-colors">Сховати візуалізацію</button>
-                </div>
-                
-                 <div class="bg-slate-50 rounded-lg p-3 mb-4 text-center">
-                     <div class="flex justify-center items-center gap-x-3 h-8" id="beat-pattern-container"></div>
-                </div>
-
-                <p id="message" class="h-6 mb-4 text-lg font-semibold text-slate-700">Обери складність та натисни "Почати"</p>
-                
-                <div class="relative w-full h-64 md:h-72 my-4">
-                    <svg id="drum-kit-svg" class="w-full h-full" viewBox="0 0 300 200" preserveAspectRatio="xMidYMin meet">
-                        <rect x="58" y="90" width="4" height="100" fill="#a1a1aa" rx="2"/>
-                        <rect x="158" y="185" width="80" height="4" fill="#a1a1aa" rx="2"/>
-                        <g id="hi-hat" class="drum-part">
-                            <ellipse class="drum-shape" cx="60" cy="90" rx="50" ry="15"/>
-                            <text class="drum-label" x="60" y="94">Hi-Hat</text>
-                        </g>
-                        <g id="tom" class="drum-part">
-                            <path class="drum-shape" d="M 120,70 C 120,86 140,91 160,91 C 180,91 200,86 200,70 L 180,65 C 180,75 170,80 160,80 C 150,80 140,75 140,65 Z"/>
-                            <ellipse class="drum-shape" cx="160" cy="70" rx="40" ry="15"/>
-                            <text class="drum-label" x="160" y="74" fill="#1e293b">Tom</text>
-                        </g>
-                        <g id="kick" class="drum-part">
-                           <circle class="drum-shape" cx="200" cy="135" r="55"/>
-                           <text class="drum-label" x="200" y="139">Kick</text>
-                        </g>
-                        <g id="snare" class="drum-part">
-                            <path class="drum-shape" d="M 80,130 C 80,151 105,161 130,161 C 155,161 180,151 180,130 L 160,125 C 160,141 145,145 130,145 C 115,145 100,141 100,125 Z"/>
-                            <ellipse class="drum-shape" cx="130" cy="130" rx="50" ry="20"/>
-                            <text class="drum-label" x="130" y="134" fill="#1e293b">Snare</text>
-                        </g>
-                    </svg>
-
-                    <!-- Sticker Popup -->
-                    <div id="sticker-popup">
-                        <img src="https://github.com/max-vorozhko/rankova_studio_drum/blob/main/IMG_0817-removebg-preview_wipe_bg.png?raw=true" alt="Стікер" class="h-60">
-                    </div>
-                </div>
-
-                <div class="mt-8 flex justify-between">
-                    <a href="https://n813529.alteg.io" target="_blank" class="pro-button inline-block">Запис на урок</a>
-                    <button id="leaderboard-btn" class="pro-button">🏆 Таблиця лідерів</button>
-                </div>
-            </div>
-
-            <!-- Leaderboard View -->
-            <div id="leaderboard-view" class="hidden">
-                 <h1 class="text-3xl md:text-4xl font-bold text-slate-800 mb-4">🏆 Таблиця лідерів</h1>
-                 <p class="text-slate-500 mb-4">Найкращі результати за 1 хвилину</p>
-                <div id="leaderboard-list" class="space-y-1 text-left max-h-96 overflow-y-auto p-2 bg-slate-50 rounded-lg">
-                    <!-- Leaderboard entries go here -->
-                </div>
-                 <div class="mt-8">
-                    <button id="back-to-game-btn" class="pro-button">Назад до гри</button>
-                </div>
-            </div>
-
-            <!-- Save Score Modal -->
-            <div id="save-score-modal" class="modal-overlay">
-                <div class="bg-white p-8 rounded-xl shadow-lg text-center w-11/12 max-w-sm">
-                    <h2 class="text-2xl font-bold text-slate-800">Гра завершена!</h2>
-                    <p class="text-slate-600 mt-2">Твій результат: <span id="final-score" class="font-bold text-xl" style="color: #ffd200;">0</span></p>
-                    <p class="mt-4">Введи своє ім'я, щоб зберегти рекорд:</p>
-                    <input type="text" id="player-name" maxlength="20" class="mt-2 w-full border border-slate-300 rounded-md p-2 text-center" placeholder="Твоє ім'я">
-                    <div class="mt-4 flex gap-x-2">
-                        <button id="save-score-btn" class="pro-button flex-1">Зберегти</button>
-                        <button id="cancel-save-btn" class="pro-button flex-1" style="background-color:#f1f5f9; color:#475569;">Пропустити</button>
-                    </div>
-                </div>
-            </div>
-        </div>
+<body>
+<div class="app">
+  <header class="top">
+    <img src="rankova-logo.png" alt="Rankova Studio" width="92" height="38">
+    <div class="name">
+      <div class="eyebrow">Барабана-гра</div>
+      <h1>Повтори ритм</h1>
     </div>
-    
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-        import { getFirestore, collection, addDoc, query, orderBy, limit, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-        
-        const firebaseConfig = {
-            apiKey: "AIzaSyBkhOhr5tKOoxbyISjwPY7S9VEA0NpTrVY",
-            authDomain: "rankovastudiodrumleaderboard.firebaseapp.com",
-            projectId: "rankovastudiodrumleaderboard",
-            storageBucket: "rankovastudiodrumleaderboard.appspot.com",
-            messagingSenderId: "93466705697",
-            appId: "1:93466705697:web:a90ef9bbf415a155860860"
-        };
+  </header>
 
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        const auth = getAuth(app);
-        
-        let audioCtx, gameTimerInterval, currentUnsubscribe;
-        const audioBuffers = {};
-        let soundsLoaded = false;
-        
-        const DRUM_COLORS = {
-            'kick': { color: 'bg-red-500' }, 'snare': { color: 'bg-blue-500' },
-            'hi-hat': { color: 'bg-yellow-400' }, 'tom': { color: 'bg-green-500' }
-        };
+  <nav class="modes" id="modes" aria-label="Режим"></nav>
 
-        const drums = {
-            'kick': { el: document.getElementById('kick') }, 'snare': { el: document.getElementById('snare') },
-            'hi-hat': { el: document.getElementById('hi-hat') }, 'tom': { el: document.getElementById('tom') }
-        };
+  <section class="hud">
+    <div class="stat"><small>Довжина</small><output id="h-len">—</output></div>
+    <div class="stat"><small>Бали</small><output id="h-score">0</output></div>
+    <div class="stat"><small>Життя</small><output id="h-lives" class="lives" aria-label="3 життя">♥♥♥</output></div>
+    <div class="stat"><small>Рекорд</small><output id="h-best">0</output></div>
+  </section>
 
-        const elements = {
-            startBtn: document.getElementById('startBtn'), scoreEl: document.getElementById('score'),
-            timerEl: document.getElementById('timer'), messageEl: document.getElementById('message'),
-            difficultyBtns: document.querySelectorAll('.difficulty-btn'),
-            beatPatternContainer: document.getElementById('beat-pattern-container'),
-            gameView: document.getElementById('game-view'), leaderboardView: document.getElementById('leaderboard-view'),
-            leaderboardBtn: document.getElementById('leaderboard-btn'), backToGameBtn: document.getElementById('back-to-game-btn'),
-            leaderboardList: document.getElementById('leaderboard-list'),
-            saveScoreModal: document.getElementById('save-score-modal'), finalScoreEl: document.getElementById('final-score'),
-            playerNameInput: document.getElementById('player-name'), saveScoreBtn: document.getElementById('save-score-btn'),
-            cancelSaveBtn: document.getElementById('cancel-save-btn'),
-            toggleVisualBtn: document.getElementById('toggleVisualBtn'),
-            svgContainer: document.getElementById('drum-kit-svg'),
-            stickerPopup: document.getElementById('sticker-popup')
-        };
-        
-        let sequence = [], playerSequence = [], score = 0, gameActive = false, timeLeft = 60, visualsHidden = false;
-        let stickerShownThisGame = false;
-        let currentDifficulty = 'easy';
-        const BEAT_SPEEDS = { easy: 600, medium: 450, hard: 300 };
-        
-        async function init() {
-            try {
-                await signInAnonymously(auth);
-            } catch (error) {
-                console.error("Anonymous sign-in failed:", error);
-                handleAuthFailure();
-            }
-            updateTimerDisplay(timeLeft);
-            setupEventListeners();
-            showLeaderboard();
-        }
-        
-        function handleAuthFailure() {
-            elements.leaderboardBtn.disabled = true;
-            elements.messageEl.innerHTML = `<span class="text-red-500 text-sm">Помилка підключення до таблиці лідерів.</span>`;
-        }
+  <section class="stage" id="stage">
+    <div class="say"><b id="say">Слухай і повторюй</b><span id="tempo"></span></div>
+    <svg class="kit" id="kit" viewBox="-6 -2 372 292" role="group" aria-label="Барабанна установка">
+      <defs>
+        <radialGradient id="g-cym" cx="45%" cy="40%" r="65%">
+          <stop offset="0" stop-color="#ffe680"/><stop offset=".55" stop-color="#e8b923"/><stop offset="1" stop-color="#b98a0e"/>
+        </radialGradient>
+        <radialGradient id="g-head" cx="45%" cy="40%" r="70%">
+          <stop offset="0" stop-color="#fbf8f0"/><stop offset="1" stop-color="#dcd4c0"/>
+        </radialGradient>
+      </defs>
 
-        function updateTimerDisplay(seconds) {
-            const mins = Math.floor(seconds / 60).toString().padStart(2, '0');
-            const secs = (seconds % 60).toString().padStart(2, '0');
-            elements.timerEl.textContent = `${mins}:${secs}`;
-        }
-        
-        async function initAudio() {
-            if (soundsLoaded) return;
-            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            if (audioCtx.state === 'suspended') await audioCtx.resume();
-            const soundUrls = {
-                'kick': 'https://raw.githubusercontent.com/wesbos/JavaScript30/master/01%20-%20JavaScript%20Drum%20Kit/sounds/kick.wav',
-                'snare': 'https://raw.githubusercontent.com/wesbos/JavaScript30/master/01%20-%20JavaScript%20Drum%20Kit/sounds/snare.wav',
-                'hi-hat': 'https://raw.githubusercontent.com/wesbos/JavaScript30/master/01%20-%20JavaScript%20Drum%20Kit/sounds/hihat.wav',
-                'tom': 'https://raw.githubusercontent.com/wesbos/JavaScript30/master/01%20-%20JavaScript%20Drum%20Kit/sounds/tom.wav'
-            };
-            await Promise.all(Object.keys(soundUrls).map(key => loadSound(key, soundUrls[key])));
-            soundsLoaded = true;
-        }
+      <!-- 1 hi-hat -->
+      <g class="drum" id="d0" data-i="0" tabindex="0" role="button" aria-label="Хай-хет, клавіша 1">
+        <circle class="halo" cx="72" cy="88" r="66" fill="none" stroke="var(--hihat)" stroke-width="6"/>
+        <circle class="expect" cx="72" cy="88" r="66" fill="none" stroke="#fff" stroke-width="3" stroke-dasharray="8 6"/>
+        <circle class="focus" cx="72" cy="88" r="62" fill="none" stroke="var(--snare)" stroke-width="3"/>
+        <g class="body">
+          <circle cx="72" cy="88" r="56" fill="url(#g-cym)"/>
+          <circle cx="72" cy="88" r="44" fill="none" stroke="#c99a12" stroke-opacity=".5"/>
+          <circle cx="72" cy="88" r="32" fill="none" stroke="#c99a12" stroke-opacity=".5"/>
+          <circle cx="72" cy="88" r="13" fill="#e2b11c" stroke="#a87c08"/>
+          <circle cx="72" cy="88" r="3" fill="#6b5304"/>
+        </g>
+        <circle cx="30" cy="40" r="11" fill="var(--hihat)"/><text class="num" x="30" y="40">1</text>
+        <text class="lab" x="72" y="128" style="fill:#4a3a05">Хай-хет</text>
+      </g>
 
-        function playSound(name) {
-            if (!audioCtx || !audioBuffers[name]) return;
-            const source = audioCtx.createBufferSource();
-            source.buffer = audioBuffers[name];
-            source.connect(audioCtx.destination);
-            source.start(0);
-        }
+      <!-- 2 snare -->
+      <g class="drum" id="d1" data-i="1" tabindex="0" role="button" aria-label="Малий барабан, клавіша 2">
+        <circle class="halo" cx="140" cy="200" r="62" fill="none" stroke="var(--snare)" stroke-width="6"/>
+        <circle class="expect" cx="140" cy="200" r="62" fill="none" stroke="#fff" stroke-width="3" stroke-dasharray="8 6"/>
+        <circle class="focus" cx="140" cy="200" r="58" fill="none" stroke="#fff" stroke-width="3"/>
+        <g class="body">
+          <circle cx="140" cy="200" r="52" fill="var(--snare)"/>
+          <circle cx="140" cy="200" r="44" fill="url(#g-head)"/>
+          <g fill="#c9c3b2"><circle cx="140" cy="151" r="2.5"/><circle cx="140" cy="249" r="2.5"/><circle cx="91" cy="200" r="2.5"/><circle cx="189" cy="200" r="2.5"/><circle cx="105" cy="165" r="2.5"/><circle cx="175" cy="235" r="2.5"/><circle cx="175" cy="165" r="2.5"/><circle cx="105" cy="235" r="2.5"/></g>
+        </g>
+        <circle cx="94" cy="152" r="11" fill="var(--snare)"/><text class="num" x="94" y="152" style="fill:#fff">2</text>
+        <text class="lab" x="140" y="205" style="fill:#3a3830">Малий</text>
+      </g>
 
-        function loadSound(name, url) {
-            return fetch(url).then(r => r.arrayBuffer()).then(ab => audioCtx.decodeAudioData(ab)).then(buf => audioBuffers[name] = buf);
-        }
+      <!-- 3 tom -->
+      <g class="drum" id="d2" data-i="2" tabindex="0" role="button" aria-label="Том, клавіша 3">
+        <circle class="halo" cx="206" cy="74" r="54" fill="none" stroke="var(--tom)" stroke-width="6"/>
+        <circle class="expect" cx="206" cy="74" r="54" fill="none" stroke="#fff" stroke-width="3" stroke-dasharray="8 6"/>
+        <circle class="focus" cx="206" cy="74" r="50" fill="none" stroke="#fff" stroke-width="3"/>
+        <g class="body">
+          <circle cx="206" cy="74" r="44" fill="var(--tom)"/>
+          <circle cx="206" cy="74" r="36" fill="url(#g-head)"/>
+        </g>
+        <circle cx="246" cy="34" r="11" fill="var(--tom)"/><text class="num" x="246" y="34" style="fill:#fff">3</text>
+        <text class="lab" x="206" y="79" style="fill:#3a3830">Том</text>
+      </g>
 
-        function animateDrum(name) {
-            const drumEl = drums[name].el;
-            drumEl.classList.add('playing');
-            setTimeout(() => drumEl.classList.remove('playing'), 150);
-        }
-        
-        function displayBeatPattern() {
-            elements.beatPatternContainer.innerHTML = '';
-            if (visualsHidden) return;
-            sequence.forEach(drumName => {
-                const indicator = document.createElement('div');
-                indicator.className = `beat-indicator ${DRUM_COLORS[drumName].color}`;
-                elements.beatPatternContainer.appendChild(indicator);
-            });
-        }
+      <!-- 4 kick (front head with the studio sun) -->
+      <g class="drum" id="d3" data-i="3" tabindex="0" role="button" aria-label="Бочка, клавіша 4">
+        <circle class="halo" cx="284" cy="194" r="76" fill="none" stroke="var(--kick)" stroke-width="6"/>
+        <circle class="expect" cx="284" cy="194" r="76" fill="none" stroke="#fff" stroke-width="3" stroke-dasharray="8 6"/>
+        <circle class="focus" cx="284" cy="194" r="72" fill="none" stroke="#fff" stroke-width="3"/>
+        <g class="body">
+          <circle cx="284" cy="194" r="66" fill="var(--kick)"/>
+          <circle cx="284" cy="194" r="57" fill="#1f1d19"/>
+          <path d="M262 206 A22 22 0 0 1 306 206" fill="none" stroke="var(--sun)" stroke-width="3.5" stroke-linecap="round"/>
+          <line x1="256" y1="206" x2="312" y2="206" stroke="var(--sun)" stroke-width="3.5" stroke-linecap="round"/>
+          <g stroke="var(--sun)" stroke-width="3" stroke-linecap="round">
+            <line x1="284" y1="170" x2="284" y2="162"/><line x1="267" y1="176" x2="262" y2="170"/><line x1="301" y1="176" x2="306" y2="170"/>
+          </g>
+        </g>
+        <circle cx="336" cy="138" r="11" fill="var(--kick)"/><text class="num" x="336" y="138" style="fill:#fff">4</text>
+        <text class="lab" x="284" y="236">Бочка</text>
+      </g>
+    </svg>
+    <div class="beats" id="beats" aria-hidden="true"></div>
+    <div class="sticker" id="sticker" aria-hidden="true"><img src="sticker.png" alt=""><p>10 ударів!</p></div>
+  </section>
 
-        async function startGame() {
-            stickerShownThisGame = false; // Reset sticker status
-            elements.startBtn.disabled = true;
-            elements.startBtn.textContent = 'Завантаження...';
-            if (!soundsLoaded) {
-                try {
-                    await initAudio();
-                } catch (error) {
-                    elements.messageEl.textContent = 'Не вдалося завантажити звук.';
-                    elements.startBtn.disabled = false;
-                    elements.startBtn.textContent = 'Почати';
-                    return;
-                }
-            }
-            
-            score = 0;
-            elements.scoreEl.textContent = 0;
-            sequence = [];
-            timeLeft = 60;
-            updateTimerDisplay(timeLeft);
-            
-            elements.difficultyBtns.forEach(b => b.disabled = true);
-            elements.toggleVisualBtn.disabled = true;
-            elements.startBtn.textContent = 'Гра триває...';
-            
-            gameActive = true;
-            gameTimerInterval = setInterval(() => {
-                timeLeft--;
-                updateTimerDisplay(timeLeft);
-                if (timeLeft <= 0) stopGame();
-            }, 1000);
-            
-            nextRound();
-        }
-        
-        function stopGame() {
-            gameActive = false;
-            clearInterval(gameTimerInterval);
-            elements.finalScoreEl.textContent = score;
-            elements.saveScoreModal.classList.add('visible');
-            elements.messageEl.textContent = 'Час вийшов!';
-        }
-        
-        function playCurrentSequence() {
-            gameActive = false; // Block input while playing sequence
-            playerSequence = [];
-            elements.messageEl.textContent = 'Слухай!';
-            let i = 0;
-            const sequenceInterval = setInterval(() => {
-                if (i < sequence.length) {
-                    const drumName = sequence[i++];
-                    animateDrum(drumName);
-                    playSound(drumName);
-                } else {
-                    clearInterval(sequenceInterval);
-                    elements.messageEl.textContent = 'Твоя черга!';
-                    gameActive = true; // Allow input after sequence is played
-                }
-            }, BEAT_SPEEDS[currentDifficulty]);
-        }
+  <div class="controls">
+    <button class="btn primary" id="btn-start" type="button">Почати</button>
+    <button class="btn" id="btn-stop" type="button" disabled>Стоп</button>
+  </div>
+  <div class="opts">
+    <p class="status" id="status" role="status">Тапай по барабанах або тисни клавіші 1–4.</p>
+    <button class="toggle" id="metro" type="button" role="switch" aria-checked="true"><i></i>Метроном</button>
+  </div>
 
+  <footer class="links">
+    <button class="btn" id="btn-board" type="button">Таблиця лідерів</button>
+    <button class="btn" id="btn-rules" type="button">Як грати</button>
+    <a class="btn primary wide" id="book" href="https://n813529.alteg.io/" target="_blank" rel="noopener">Записатись на урок</a>
+    <a class="back wide" href="https://max-vorozhko.github.io/rankova_usefull/">← Усі ігри Rankova Studio</a>
+  </footer>
+</div>
 
-        function nextRound() {
-            if (!gameActive) return;
-            const drumKeys = Object.keys(drums);
-            const randomDrum = drumKeys[Math.floor(Math.random() * drumKeys.length)];
-            sequence.push(randomDrum);
-            displayBeatPattern();
-            playCurrentSequence();
-        }
+<div class="overlay" id="ov-rules" hidden role="dialog" aria-modal="true" aria-labelledby="ru-title">
+  <div class="panel">
+    <h2 id="ru-title">Як грати</h2>
+    <ul class="tips">
+      <li>Барабани грають короткий ритм. Послухай його.</li>
+      <li>Повтори ті самі барабани в тому ж порядку і в тому ж темпі.</li>
+      <li>Кожен правильний барабан дає 1 бал, удар у такт ще 1 бал.</li>
+      <li>Після кожного раунду ритм стає на один удар довшим і трохи швидшим.</li>
+      <li>Помилка забирає одне життя. Їх три.</li>
+    </ul>
+    <p class="muted">Режими: «Легко» показує ритм кольоровими кружечками, «Середньо» лише підсвічує барабани, «На слух» тільки звучить.</p>
+    <button class="btn primary" id="btn-close-ru" type="button">Зрозуміло</button>
+  </div>
+</div>
 
-        function handleDrumClick(name) {
-            if (!gameActive) return;
-            
-            animateDrum(name);
-            playSound(name);
-            playerSequence.push(name);
-            
-            const currentMoveIndex = playerSequence.length - 1;
+<div class="overlay" id="ov-result" hidden role="dialog" aria-modal="true" aria-labelledby="r-title">
+  <div class="panel">
+    <div>
+      <div class="eyebrow" id="r-mode"></div>
+      <h2 id="r-title">Готово!</h2>
+    </div>
+    <div class="big"><span id="r-best">0</span> <small>ударів поспіль</small></div>
+    <div class="chips" id="r-chips"></div>
+    <ul class="tips" id="r-tips"></ul>
+    <form id="save-form" class="row" novalidate>
+      <input type="text" id="player-name" maxlength="20" placeholder="Твоє ім'я" autocomplete="nickname" aria-label="Ім'я для таблиці лідерів">
+      <button class="btn primary" type="submit" id="btn-save">Зберегти</button>
+    </form>
+    <p class="err" id="save-err"></p>
+    <div class="row">
+      <button class="btn" id="btn-again" type="button">Ще раз</button>
+      <button class="btn" id="btn-close-r" type="button">Закрити</button>
+    </div>
+  </div>
+</div>
 
-            if (playerSequence[currentMoveIndex] !== sequence[currentMoveIndex]) {
-                gameActive = false; // Immediately disable further clicks
-                elements.messageEl.textContent = 'Помилка! Слухай ще раз.';
-                setTimeout(() => {
-                    playCurrentSequence(); // Replay the same sequence
-                }, 1000); 
-            } else if (playerSequence.length === sequence.length) {
-                gameActive = false; // Immediately disable further clicks
-                score++;
-                elements.scoreEl.textContent = score;
+<div class="overlay" id="ov-board" hidden role="dialog" aria-modal="true" aria-labelledby="b-title">
+  <div class="panel">
+    <h2 id="b-title">Таблиця лідерів</h2>
+    <div class="seg" id="b-modes"></div>
+    <div class="seg" id="b-period">
+      <button type="button" data-p="month" aria-pressed="true">Цей місяць</button>
+      <button type="button" data-p="all" aria-pressed="false">Весь час</button>
+    </div>
+    <ol class="board" id="b-list"></ol>
+    <p class="note" id="b-note"></p>
+    <button class="btn" id="btn-close-b" type="button">Закрити</button>
+  </div>
+</div>
 
-                if (score === 10 && !stickerShownThisGame) {
-                    stickerShownThisGame = true;
-                    elements.stickerPopup.classList.add('show');
-                    setTimeout(() => {
-                        elements.stickerPopup.classList.remove('show');
-                    }, 3000);
-                }
+<script>
+(() => {
+'use strict';
 
-                setTimeout(() => {
-                    gameActive = true; 
-                    nextRound();
-                }, 200);
-            }
-        }
-        
-        function resetGame() {
-            clearInterval(gameTimerInterval);
-            stickerShownThisGame = false;
-            gameActive = false;
-            elements.startBtn.disabled = false;
-            elements.startBtn.textContent = 'Почати';
-            elements.difficultyBtns.forEach(b => b.disabled = false);
-            elements.toggleVisualBtn.disabled = false;
-            score = 0;
-            elements.scoreEl.textContent = 0;
-            timeLeft = 60;
-            updateTimerDisplay(timeLeft);
-            elements.messageEl.textContent = 'Обери складність та натисни "Почати"';
-            elements.saveScoreModal.classList.remove('visible');
-            elements.stickerPopup.classList.remove('show');
-            elements.leaderboardView.classList.add('hidden');
-            elements.gameView.classList.remove('hidden');
-            elements.beatPatternContainer.innerHTML = '';
-        }
+/* ---------- Config ---------- */
+const IS_LIVE = /(^|\.)github\.io$/.test(location.hostname);
+const DEV = location.hash === '#dev';
+const BOOKING_URL = 'https://n813529.alteg.io/?utm_source=games&utm_medium=drum_memory';
+const FIREBASE = {
+  apiKey: 'AIzaSyBkhOhr5tKOoxbyISjwPY7S9VEA0NpTrVY',
+  authDomain: 'rankovastudiodrumleaderboard.firebaseapp.com',
+  projectId: 'rankovastudiodrumleaderboard',
+  storageBucket: 'rankovastudiodrumleaderboard.appspot.com',
+  messagingSenderId: '93466705697',
+  appId: '1:93466705697:web:a90ef9bbf415a155860860'
+};
+const BOARD_COLLECTION = 'memory_v2';
+const DRUMS = [
+  { name: 'Хай-хет', short: 'хай-хет', color: 'var(--hihat)' },
+  { name: 'Малий', short: 'малий', color: 'var(--snare)' },
+  { name: 'Том', short: 'том', color: 'var(--tom)' },
+  { name: 'Бочка', short: 'бочка', color: 'var(--kick)' }
+];
+const MODES = [
+  { id: 'easy', title: 'Легко', sub: 'з підказками', bpm: 84, hint: true, light: true },
+  { id: 'medium', title: 'Середньо', sub: 'без підказок', bpm: 100, hint: false, light: true },
+  { id: 'ear', title: 'На слух', sub: 'тільки звук', bpm: 92, hint: false, light: false }
+];
+const START_LEN = 3, LIVES = 3, STICKER_AT = 10;
+const IN_TIME = 0.15; // fraction of a beat that still counts as "in time"
 
-        function showLeaderboard() {
-            if (!auth.currentUser) {
-                elements.leaderboardList.innerHTML = '<p class="text-center py-4 text-red-500">Не вдалося підключитися до таблиці лідерів.</p>';
-                return;
-            }
+const $ = id => document.getElementById(id);
+const store = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* storage unavailable */ } }
+};
 
-            if (currentUnsubscribe) currentUnsubscribe();
-            const leaderboardCollection = collection(db, `drum_leaderboard_60_sec`);
-            const q = query(leaderboardCollection, orderBy("score", "desc"), limit(10));
-            
-            const listElement = elements.leaderboardList;
-            listElement.innerHTML = '<p class="text-center py-4 text-gray-500">Завантаження...</p>';
+/* ---------- State ---------- */
+let mode = MODES.find(m => m.id === store.get('rm_mode', 'easy')) || MODES[0];
+let metro = store.get('rm_metro', true);
+let phase = 'idle';   // idle | listen | turn | pause
+let game = null;
+let lastResult = null;
+let timers = [];
+function later(fn, ms) { const id = setTimeout(fn, ms); timers.push(id); return id; }
+function clearTimers() { timers.forEach(clearTimeout); timers = []; }
 
-            currentUnsubscribe = onSnapshot(q, (querySnapshot) => {
-                listElement.innerHTML = '';
-                if (querySnapshot.empty) {
-                    listElement.innerHTML = '<p class="text-center py-4 text-gray-600">Таблиця лідерів порожня. Будь першим!</p>';
-                    return;
-                }
+/* ---------- Audio (all sounds synthesised, no downloads) ---------- */
+let ctx = null, master, noiseBuf;
+function ensureCtx() {
+  if (ctx) return ctx;
+  const AC = window.AudioContext || window.webkitAudioContext;
+  ctx = new AC({ latencyHint: 'interactive' });
+  const comp = ctx.createDynamicsCompressor(); comp.connect(ctx.destination);
+  master = ctx.createGain(); master.gain.value = 0.9; master.connect(comp);
+  noiseBuf = ctx.createBuffer(1, Math.floor(ctx.sampleRate * 0.5), ctx.sampleRate);
+  const ch = noiseBuf.getChannelData(0);
+  for (let i = 0; i < ch.length; i++) ch[i] = Math.random() * 2 - 1;
+  return ctx;
+}
+function env(g, t, peak, dur) { g.gain.setValueAtTime(peak, t); g.gain.exponentialRampToValueAtTime(0.0008, t + dur); }
+function noise(t, dur, type, freq, peak, q) {
+  const n = ctx.createBufferSource(); n.buffer = noiseBuf;
+  const f = ctx.createBiquadFilter(); f.type = type; f.frequency.value = freq; if (q) f.Q.value = q;
+  const g = ctx.createGain(); env(g, t, peak, dur);
+  n.connect(f); f.connect(g); g.connect(master);
+  n.start(t); n.stop(t + dur + 0.02);
+}
+function tone(t, type, f0, f1, glide, peak, dur) {
+  const o = ctx.createOscillator(), g = ctx.createGain();
+  o.type = type; o.frequency.setValueAtTime(f0, t); o.frequency.exponentialRampToValueAtTime(f1, t + glide);
+  env(g, t, peak, dur); o.connect(g); g.connect(master); o.start(t); o.stop(t + dur + 0.03);
+}
+const SOUNDS = [
+  t => { noise(t, 0.07, 'highpass', 7000, 0.55); noise(t, 0.04, 'bandpass', 10000, 0.35, 1.5); },
+  t => { noise(t, 0.19, 'highpass', 1400, 0.65); noise(t, 0.08, 'bandpass', 3500, 0.35); tone(t, 'triangle', 205, 150, 0.08, 0.5, 0.11); },
+  t => { tone(t, 'sine', 160, 96, 0.25, 0.95, 0.45); noise(t, 0.012, 'highpass', 2500, 0.2); },
+  t => { tone(t, 'sine', 165, 44, 0.12, 1.0, 0.36); noise(t, 0.012, 'highpass', 3000, 0.22); }
+];
+function playDrum(i, t) { SOUNDS[i](t === undefined ? ctx.currentTime : t); }
+function click(t, accent) { tone(t, 'square', accent ? 1760 : 1320, accent ? 1760 : 1320, 0.01, accent ? 0.12 : 0.07, 0.035); }
+function audioNow(perf) {
+  if (ctx.getOutputTimestamp) {
+    const ts = ctx.getOutputTimestamp();
+    if (ts && ts.performanceTime > 0 && ts.contextTime > 0) return ts.contextTime + (perf - ts.performanceTime) / 1000;
+  }
+  return ctx.currentTime - (ctx.outputLatency || 0);
+}
 
-                let rank = 1;
-                querySnapshot.forEach((doc) => {
-                    const data = doc.data();
-                    const scoreValue = data.score;
-                    
-                    if (typeof scoreValue !== 'number' || isNaN(scoreValue)) {
-                        console.warn("Skipping invalid leaderboard entry:", data);
-                        return;
-                    }
+/* ---------- UI helpers ---------- */
+const kit = $('kit');
+const drumEls = [0, 1, 2, 3].map(i => $('d' + i));
+function light(i, ms) {
+  const el = drumEls[i];
+  el.classList.add('lit');
+  setTimeout(() => el.classList.remove('lit'), ms || 140);
+}
+function say(text) { $('say').textContent = text; }
+function status(text) { $('status').textContent = text; }
+function bpmFor(len) { return mode.bpm + 4 * Math.min(7, Math.floor((len - START_LEN) / 2)); }
+function renderLives(n) {
+  const el = $('h-lives'); el.textContent = '';
+  for (let i = 0; i < LIVES; i++) { const s = document.createElement('span'); s.textContent = '♥'; if (i >= n) s.className = 'gone'; el.appendChild(s); }
+  el.setAttribute('aria-label', n + ' ' + (n === 1 ? 'життя' : 'життя'));
+}
+function personalBest() { return store.get('rm_best_' + mode.id, 0); }
+function renderHud() {
+  $('h-len').textContent = game ? String(game.seq.length) : '—';
+  $('h-score').textContent = game ? String(game.score) : '0';
+  renderLives(game ? game.lives : LIVES);
+  $('h-best').textContent = String(Math.max(personalBest(), game ? game.best : 0));
+  $('tempo').textContent = (game ? bpmFor(game.seq.length) : mode.bpm) + ' BPM';
+}
 
-                    const entry = document.createElement('div');
-                    entry.className = 'leaderboard-entry';
-                    entry.innerHTML = `
-                        <div class="flex items-center">
-                            <span class="font-bold text-lg text-slate-500 w-8 text-left">${rank}.</span> 
-                            <span class="ml-4 text-gray-800 font-medium truncate">${data.name || 'Анонім'}</span>
-                        </div>
-                        <span class="font-mono text-xl text-slate-800 font-bold">${scoreValue}</span>
-                    `;
-                    if (rank % 2 !== 0) {
-                       entry.classList.add('bg-slate-50');
-                    }
-                    listElement.appendChild(entry);
-                    rank++;
-                });
+/* Row of beats under the kit: one circle per note in the phrase */
+function renderBeats(stateFn) {
+  const box = $('beats'); box.textContent = '';
+  if (!game) return;
+  game.seq.forEach((d, i) => {
+    const b = document.createElement('span');
+    b.className = 'beat';
+    b.style.setProperty('--c', DRUMS[d].color);
+    const st = stateFn ? stateFn(i, d) : '';
+    if (st) st.split(' ').forEach(c => c && b.classList.add(c));
+    box.appendChild(b);
+  });
+}
+function beatEl(i) { return $('beats').children[i]; }
 
-            }, (error) => {
-                console.error("Помилка при завантаженні таблиці лідерів:", error);
-                listElement.innerHTML = '<p class="text-center py-4 text-red-500">Помилка завантаження. Перевірте консоль.</p>';
-            });
-        }
-        
-        function showView(viewName) {
-            elements.gameView.classList.toggle('hidden', viewName !== 'game');
-            elements.leaderboardView.classList.toggle('hidden', viewName !== 'leaderboard');
-        }
-        
-        function setupEventListeners() {
-            Object.keys(drums).forEach(key => drums[key].el.addEventListener('click', () => handleDrumClick(key)));
-            elements.startBtn.addEventListener('click', startGame);
-            
-            elements.difficultyBtns.forEach(btn => btn.addEventListener('click', () => {
-                if(gameActive) return;
-                elements.difficultyBtns.forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                currentDifficulty = btn.dataset.difficulty;
-                if (currentDifficulty === 'hard') {
-                    elements.svgContainer.classList.add('hardcore-mode');
-                } else {
-                    elements.svgContainer.classList.remove('hardcore-mode');
-                }
-            }));
+/* ---------- Modes ---------- */
+const modesEl = $('modes');
+MODES.forEach(m => {
+  const b = document.createElement('button');
+  b.type = 'button'; b.className = 'mode'; b.dataset.id = m.id;
+  const t = document.createElement('b'); t.textContent = m.title;
+  const s = document.createElement('span'); s.textContent = m.sub;
+  b.append(t, s);
+  b.addEventListener('click', () => selectMode(m.id));
+  modesEl.appendChild(b);
+});
+function selectMode(id) {
+  if (phase !== 'idle') return;
+  mode = MODES.find(m => m.id === id) || MODES[0];
+  store.set('rm_mode', mode.id);
+  [...modesEl.children].forEach(b => b.setAttribute('aria-pressed', String(b.dataset.id === mode.id)));
+  renderHud();
+}
+function lockModes(on) { [...modesEl.children].forEach(b => { b.disabled = on; }); }
 
-            elements.toggleVisualBtn.addEventListener('click', () => {
-                visualsHidden = !visualsHidden;
-                if (visualsHidden) {
-                    elements.beatPatternContainer.style.visibility = 'hidden';
-                    elements.toggleVisualBtn.textContent = 'Показати візуалізацію';
-                } else {
-                    elements.beatPatternContainer.style.visibility = 'visible';
-                    elements.toggleVisualBtn.textContent = 'Сховати візуалізацію';
-                    displayBeatPattern();
-                }
-            });
+const metroBtn = $('metro');
+function renderMetro() { metroBtn.setAttribute('aria-checked', String(metro)); }
+metroBtn.addEventListener('click', () => { metro = !metro; store.set('rm_metro', metro); renderMetro(); });
 
-            elements.leaderboardBtn.addEventListener('click', () => {
-                showView('leaderboard');
-                showLeaderboard();
-            });
-            elements.backToGameBtn.addEventListener('click', () => showView('game'));
-            
-            elements.cancelSaveBtn.addEventListener('click', resetGame);
-            elements.saveScoreBtn.addEventListener('click', async () => {
-                if (!auth.currentUser) {
-                    console.error("Authentication required to save score.");
-                    alert("Помилка: неможливо зберегти результат. Потрібна авторизація.");
-                    resetGame();
-                    return;
-                }
+/* ---------- Phrase generation ---------- */
+// Musical weighting on a 4-beat bar: kick favours beats 1 and 3, snare favours 2 and 4.
+function nextDrum(seq) {
+  const pos = seq.length % 4;
+  const w = pos === 0 ? [1, 1.2, 1, 3.2] : pos === 2 ? [1, 3, 1.2, 1.4] : pos === 1 ? [2.4, 1.6, 1.4, 1] : [2.2, 1.2, 1.8, 1.2];
+  const n = seq.length;
+  if (n >= 2 && seq[n - 1] === seq[n - 2]) w[seq[n - 1]] = 0;   // no three in a row
+  const sum = w.reduce((a, b) => a + b, 0);
+  let r = Math.random() * sum;
+  for (let i = 0; i < 4; i++) { r -= w[i]; if (r <= 0) return i; }
+  return 3;
+}
 
-                const playerName = elements.playerNameInput.value.trim();
-                const numericScore = parseInt(score, 10);
+/* ---------- Game flow ---------- */
+async function startGame() {
+  if (phase !== 'idle') return;
+  ensureCtx();
+  try { await ctx.resume(); } catch (e) { /* ignore */ }
+  const seq = [];
+  for (let i = 0; i < START_LEN; i++) seq.push(nextDrum(seq));
+  game = { seq, lives: LIVES, score: 0, best: 0, hits: 0, inTime: 0, timed: 0, stickerShown: false, topBpm: mode.bpm, mistakes: [0, 0, 0, 0] };
+  $('ov-result').hidden = true;
+  lockModes(true);
+  $('btn-start').disabled = true; $('btn-stop').disabled = false;
+  $('btn-start').textContent = 'Гра триває';
+  renderHud();
+  const stage = $('stage');
+  const r = stage.getBoundingClientRect();
+  if (r.top < 0 || r.bottom > innerHeight) stage.scrollIntoView({ block: 'center', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+  later(listen, 350);
+}
 
-                if (isNaN(numericScore)) {
-                    console.error("Помилка: Рахунок не є числом. Результат не збережено.");
-                    resetGame();
-                    return;
-                }
+function listen() {
+  if (!game) return;
+  phase = 'listen';
+  const bpm = bpmFor(game.seq.length);
+  game.beat = 60 / bpm;
+  game.topBpm = Math.max(game.topBpm, bpm);
+  renderHud();
+  kit.classList.toggle('dim', !mode.light);
+  say('Слухай…');
+  status(mode.light ? 'Дивись і слухай, які барабани грають.' : 'Тільки звук. Слухай уважно.');
+  renderBeats(() => (mode.hint ? 'hint' : ''));
+  const t0 = ctx.currentTime + 0.35;
+  // two pickup clicks so the tempo is clear before the phrase
+  click(t0, true); click(t0 + game.beat, false);
+  const start = t0 + 2 * game.beat;
+  game.seq.forEach((d, i) => playDrum(d, start + i * game.beat));
+  const marks = game.seq.map((d, i) => ({ t: start + i * game.beat, d, i, done: false }));
+  const endAt = start + game.seq.length * game.beat;
+  const tick = (now) => {
+    if (!game || phase !== 'listen') return;
+    const at = audioNow(now);
+    for (const m of marks) {
+      if (!m.done && at >= m.t) {
+        m.done = true;
+        if (mode.light) light(m.d, Math.min(220, game.beat * 600));
+        const el = beatEl(m.i);
+        if (el) { el.classList.add(mode.hint ? 'on' : 'now'); }
+      }
+    }
+    if (at >= endAt - game.beat * 0.35) { yourTurn(); return; }
+    requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
+}
 
-                if (playerName && numericScore >= 0) {
-                    try {
-                        await addDoc(collection(db, `drum_leaderboard_60_sec`), {
-                            name: playerName, score: numericScore, difficulty: currentDifficulty, timestamp: serverTimestamp()
-                        });
-                        resetGame();
-                        elements.leaderboardBtn.click();
-                    } catch (e) {
-                        console.error("Error adding document: ", e);
-                    }
-                } else if(!playerName) {
-                    alert("Будь ласка, введіть ім'я.");
-                } else {
-                    resetGame();
-                }
-            });
-        }
-        
-        init();
-    </script>
+function yourTurn() {
+  if (!game) return;
+  phase = 'turn';
+  kit.classList.remove('dim');
+  game.pos = 0; game.firstAt = null; game.roundInTime = 0;
+  renderBeats(() => (mode.hint ? 'hint' : ''));
+  say('Твоя черга');
+  status('Повтори ' + game.seq.length + ' ' + udariv(game.seq.length) + ' у тому ж темпі.');
+}
+function udariv(n) {
+  const a = n % 10, b = n % 100;
+  if (a === 1 && b !== 11) return 'удар';
+  if (a >= 2 && a <= 4 && (b < 12 || b > 14)) return 'удари';
+  return 'ударів';
+}
+
+function hit(i, perf) {
+  ensureCtx();
+  if (ctx.state !== 'running') ctx.resume();
+  if (phase === 'listen') return;          // don't play over the demo
+  playDrum(i);
+  light(i);
+  if (phase !== 'turn' || !game) return;
+  const pos = game.pos;
+  const want = game.seq[pos];
+  const el = beatEl(pos);
+  if (i !== want) { mistake(pos, want); return; }
+
+  // correct drum
+  game.score += 1; game.hits += 1;
+  let intime = false;
+  if (pos === 0) {
+    game.firstAt = perf;
+    if (metro) for (let k = 1; k < game.seq.length; k++) click(ctx.currentTime + k * game.beat, false);
+  } else {
+    const expected = game.firstAt + pos * game.beat * 1000;
+    const dev = Math.abs(perf - expected) / 1000;
+    game.timed += 1;
+    if (dev <= IN_TIME * game.beat) { intime = true; game.inTime += 1; game.roundInTime += 1; game.score += 1; }
+  }
+  if (el) { el.classList.remove('hint', 'now'); el.classList.add('done'); if (intime) el.classList.add('intime'); }
+  game.pos += 1;
+  renderHud();
+  if (game.pos === game.seq.length) roundDone();
+}
+
+function roundDone() {
+  phase = 'pause';
+  const len = game.seq.length;
+  game.best = Math.max(game.best, len);
+  const clean = len > 1 && game.roundInTime === len - 1;
+  if (clean) game.score += 2;
+  say(clean ? 'Рівно в такт!' : 'Правильно!');
+  status(clean ? '+2 бали за рівний темп. Ритм стає довшим.' : 'Ритм стає довшим. Тримай рівний темп.');
+  renderHud();
+  if (game.best >= STICKER_AT && !game.stickerShown) {
+    game.stickerShown = true;
+    const s = $('sticker'); s.classList.add('show'); setTimeout(() => s.classList.remove('show'), 2600);
+  }
+  later(() => { if (!game) return; game.seq.push(nextDrum(game.seq)); listen(); }, 900);
+}
+
+function mistake(pos, want) {
+  phase = 'pause';
+  game.lives -= 1;
+  game.mistakes[want] += 1;
+  const el = beatEl(pos);
+  if (el) { el.classList.remove('hint', 'now'); el.classList.add('wrong'); }
+  const ex = drumEls[want];
+  ex.classList.add('expected');
+  setTimeout(() => ex.classList.remove('expected'), 1500);
+  say('Треба було: ' + DRUMS[want].short);
+  renderHud();
+  if (game.lives <= 0) { later(gameOver, 1400); status('Життя закінчились.'); return; }
+  status('Мінус одне життя. Слухай ще раз той самий ритм.');
+  later(listen, 1600);
+}
+
+function gameOver() {
+  const g = game;
+  phase = 'idle'; game = null; clearTimers();
+  lockModes(false);
+  $('btn-start').disabled = false; $('btn-stop').disabled = true; $('btn-start').textContent = 'Почати';
+  kit.classList.remove('dim');
+  if (g.best > personalBest()) store.set('rm_best_' + mode.id, g.best);
+  showResult(g);
+  say('Слухай і повторюй');
+  status('Тапай по барабанах або тисни клавіші 1–4.');
+  renderHud();
+  $('beats').textContent = '';
+}
+
+function stopGame() {
+  if (!game) return;
+  clearTimers();
+  phase = 'idle'; game = null;
+  lockModes(false);
+  $('btn-start').disabled = false; $('btn-stop').disabled = true; $('btn-start').textContent = 'Почати';
+  kit.classList.remove('dim');
+  $('beats').textContent = '';
+  say('Слухай і повторюй');
+  status('Гру зупинено.');
+  renderHud();
+}
+
+/* ---------- Result ---------- */
+function showResult(g) {
+  const pct = g.timed ? Math.round(100 * g.inTime / g.timed) : 0;
+  lastResult = { mode: mode.id, best: g.best, score: g.score, intime: pct, saved: false };
+  $('r-mode').textContent = 'Режим: ' + mode.title;
+  $('r-title').textContent = g.best >= 12 ? 'Пам\'ять барабанщика!' : g.best >= 8 ? 'Дуже добре!' : g.best >= 5 ? 'Непогано!' : 'Спробуй ще раз';
+  $('r-best').textContent = g.best;
+  const chips = $('r-chips'); chips.textContent = '';
+  [['Бали', g.score], ['В такт', g.timed ? pct + '%' : '—'], ['Темп', g.topBpm + ' BPM']].forEach(([l, v]) => {
+    const d = document.createElement('div'); d.className = 'chip';
+    const s = document.createElement('small'); s.textContent = l;
+    const b = document.createElement('b'); b.textContent = v;
+    d.append(s, b); chips.appendChild(d);
+  });
+  const tips = [];
+  if (g.timed >= 4 && pct < 50) tips.push('Тримай рівний темп: рахуй про себе «раз-два-три-чотири», як у клацаннях перед ритмом.');
+  else if (g.timed >= 4 && pct >= 85) tips.push('Темп тримаєш чудово.');
+  const worst = g.mistakes.indexOf(Math.max(...g.mistakes));
+  if (g.mistakes[worst] >= 2) tips.push('Найчастіше плутаєш ' + DRUMS[worst].short + '. Перед грою потапай по ньому, щоб запам\'ятати звук.');
+  if (mode.id === 'easy' && g.best >= 8) tips.push('Спробуй режим «Середньо», без підказок.');
+  if (mode.id === 'medium' && g.best >= 8) tips.push('Спробуй режим «На слух».');
+  if (!tips.length) tips.push('Слухай ритм цілком, а не по одному удару. Так легше запам\'ятати.');
+  const tl = $('r-tips'); tl.textContent = '';
+  tips.forEach(t => { const li = document.createElement('li'); li.textContent = t; tl.appendChild(li); });
+  $('save-err').textContent = '';
+  $('save-form').hidden = g.best < START_LEN;
+  $('btn-save').disabled = false;
+  $('player-name').value = store.get('rk_name', '');
+  $('ov-result').hidden = false;
+}
+
+/* ---------- Leaderboard ---------- */
+function monthKey() { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'); }
+const NAME_RE = /^[\p{L}\p{N}][\p{L}\p{N} .'’\-]{1,19}$/u;
+function cleanName(s) { return s.replace(/\s+/g, ' ').trim(); }
+function rankOf(e) { return e.best * 10000 + e.score; }
+
+const localBoard = {
+  load() { return store.get('rm_board_local', []); },
+  async add(e) { const a = this.load(); a.push(e); store.set('rm_board_local', a); },
+  async top(m, period) {
+    const mk = monthKey();
+    return this.load().filter(e => e.mode === m && (period === 'all' || e.month === mk)).sort((a, b) => b.rank - a.rank).slice(0, 10);
+  }
+};
+let fbPromise = null;
+function firebase() {
+  if (!fbPromise) {
+    const base = 'https://www.gstatic.com/firebasejs/10.12.2/';
+    fbPromise = Promise.all([import(base + 'firebase-app.js'), import(base + 'firebase-firestore.js'), import(base + 'firebase-auth.js')])
+      .then(async ([appM, fs, au]) => {
+        const app = appM.initializeApp(FIREBASE);
+        try { await au.signInAnonymously(au.getAuth(app)); } catch (e) { console.warn('Anonymous sign-in failed', e); }
+        return { db: fs.getFirestore(app), fs };
+      });
+    fbPromise.catch(() => { fbPromise = null; });
+  }
+  return fbPromise;
+}
+const remoteBoard = {
+  async add(e) { const { db, fs } = await firebase(); await fs.addDoc(fs.collection(db, BOARD_COLLECTION + '_' + e.mode), { ...e, ts: fs.serverTimestamp() }); },
+  async top(m, period) {
+    const { db, fs } = await firebase();
+    // One collection per mode, so no composite Firestore indexes are needed.
+    const col = fs.collection(db, BOARD_COLLECTION + '_' + m);
+    const q = period === 'month'
+      ? fs.query(col, fs.where('month', '==', monthKey()), fs.limit(500))
+      : fs.query(col, fs.orderBy('rank', 'desc'), fs.limit(10));
+    const snap = await fs.getDocs(q);
+    return snap.docs.map(d => d.data()).sort((a, b) => b.rank - a.rank).slice(0, 10);
+  }
+};
+const board = IS_LIVE ? remoteBoard : localBoard;
+let boardMode = mode.id, boardPeriod = 'month';
+const bModes = $('b-modes');
+MODES.forEach(m => {
+  const b = document.createElement('button'); b.type = 'button'; b.dataset.id = m.id; b.textContent = m.title;
+  b.addEventListener('click', () => { boardMode = m.id; renderBoard(); });
+  bModes.appendChild(b);
+});
+$('b-period').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; boardPeriod = b.dataset.p; renderBoard(); });
+async function renderBoard() {
+  [...bModes.children].forEach(b => b.setAttribute('aria-pressed', String(b.dataset.id === boardMode)));
+  [...$('b-period').children].forEach(b => b.setAttribute('aria-pressed', String(b.dataset.p === boardPeriod)));
+  const list = $('b-list'); list.textContent = '';
+  const note = $('b-note'); note.textContent = 'Завантажую…';
+  try {
+    const rows = await board.top(boardMode, boardPeriod);
+    rows.forEach((r, i) => {
+      const li = document.createElement('li');
+      [['rk', (i + 1) + '.'], ['nm', String(r.name || 'Гравець')], ['ac', r.score + ' б.'], ['sc', r.best + ' уд.']].forEach(([c, t]) => {
+        const s = document.createElement('span'); s.className = c; s.textContent = t; li.appendChild(s);
+      });
+      list.appendChild(li);
+    });
+    note.textContent = rows.length ? 'Місце визначає найдовший повторений ритм, а при рівності бали.' : (boardPeriod === 'month' ? 'Цього місяця ще ніхто не грав у цьому режимі. Будь першим!' : 'Ще немає результатів.');
+    if (!IS_LIVE) note.textContent += ' Тестовий режим: результати зберігаються лише на цьому пристрої.';
+  } catch (e) {
+    console.error('Leaderboard error', e);
+    note.textContent = 'Таблиця тимчасово недоступна. Спробуй пізніше.';
+  }
+}
+function openBoard(m) { boardMode = m || mode.id; $('ov-result').hidden = true; $('ov-board').hidden = false; renderBoard(); }
+$('save-form').addEventListener('submit', async e => {
+  e.preventDefault();
+  if (!lastResult || lastResult.saved) return;
+  const name = cleanName($('player-name').value);
+  const err = $('save-err');
+  if (!NAME_RE.test(name)) { err.textContent = 'Ім\'я: від 2 до 20 букв або цифр.'; return; }
+  err.textContent = ''; $('btn-save').disabled = true;
+  store.set('rk_name', name);
+  const entry = { name, best: lastResult.best, score: lastResult.score, intime: lastResult.intime, mode: lastResult.mode, month: monthKey() };
+  entry.rank = rankOf(entry);
+  try { await board.add(entry); lastResult.saved = true; openBoard(lastResult.mode); }
+  catch (ex) { console.error(ex); err.textContent = 'Не вдалося зберегти. Перевір інтернет і спробуй ще раз.'; $('btn-save').disabled = false; }
+});
+
+/* ---------- Input ---------- */
+drumEls.forEach((el, i) => {
+  el.addEventListener('pointerdown', e => { e.preventDefault(); hit(i, e.timeStamp); });
+  el.addEventListener('keydown', e => {
+    if ((e.key === 'Enter' || e.key === ' ') && !e.repeat) { e.preventDefault(); e.stopPropagation(); hit(i, e.timeStamp); }
+  });
+});
+const KEYS = { Digit1: 0, Digit2: 1, Digit3: 2, Digit4: 3, Numpad1: 0, Numpad2: 1, Numpad3: 2, Numpad4: 3, KeyD: 0, KeyF: 1, KeyJ: 2, KeyK: 3 };
+window.addEventListener('keydown', e => {
+  const tag = (document.activeElement && document.activeElement.tagName) || '';
+  if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+  if (e.key === 'Escape') { ['ov-result', 'ov-board', 'ov-rules'].forEach(id => { $(id).hidden = true; }); return; }
+  if (!(e.code in KEYS)) return;
+  e.preventDefault();
+  if (e.repeat) return;
+  hit(KEYS[e.code], e.timeStamp);
+});
+$('btn-start').addEventListener('click', startGame);
+$('btn-stop').addEventListener('click', stopGame);
+$('btn-again').addEventListener('click', () => { $('ov-result').hidden = true; startGame(); });
+$('btn-close-r').addEventListener('click', () => { $('ov-result').hidden = true; });
+$('btn-board').addEventListener('click', () => openBoard());
+$('btn-close-b').addEventListener('click', () => { $('ov-board').hidden = true; });
+$('btn-rules').addEventListener('click', () => { $('ov-rules').hidden = false; });
+$('btn-close-ru').addEventListener('click', () => { $('ov-rules').hidden = true; store.set('rm_rules_seen', true); });
+$('book').href = BOOKING_URL;
+document.addEventListener('visibilitychange', () => { if (document.hidden && game) stopGame(); });
+if (DEV) window.__rm = { get game() { return game; }, get phase() { return phase; }, hit };
+
+/* ---------- Boot ---------- */
+selectMode(mode.id);
+renderMetro();
+renderHud();
+})();
+</script>
+
 </body>
 </html>
