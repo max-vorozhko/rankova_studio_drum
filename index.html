@@ -95,6 +95,10 @@ body {
 .say { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; min-height: 30px; }
 .say b { font-family: var(--font-display); font-weight: 700; font-size: 22px; line-height: 1.2; }
 .say span { font-size: 13px; color: var(--stage-muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.say .tempo { display: inline-flex; align-items: center; gap: 8px; }
+.mdot { width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--sun); box-sizing: border-box; transition: background .15s ease, transform .15s ease; }
+.mdot.flash { background: var(--sun); transform: scale(1.25); transition: none; }
+.mdot.flash.accent { box-shadow: 0 0 12px var(--sun); }
 .kit { width: 100%; height: auto; display: block; touch-action: none; user-select: none; -webkit-user-select: none; }
 .drum { cursor: pointer; outline: none; }
 .drum .body { transition: transform .08s ease, filter .08s ease; transform-box: fill-box; transform-origin: center; }
@@ -212,7 +216,7 @@ input[type="text"]:focus-visible { outline: 3px solid var(--snare); outline-offs
   </section>
 
   <section class="stage" id="stage">
-    <div class="say"><b id="say">Слухай і повторюй</b><span id="tempo"></span></div>
+    <div class="say"><b id="say">Слухай і повторюй</b><span class="tempo"><i class="mdot" id="mdot" aria-hidden="true"></i><span id="tempo"></span></span></div>
     <svg class="kit" id="kit" viewBox="-6 -2 372 292" role="group" aria-label="Барабанна установка">
       <defs>
         <radialGradient id="g-cym" cx="45%" cy="40%" r="65%">
@@ -274,10 +278,12 @@ input[type="text"]:focus-visible { outline: 3px solid var(--snare); outline-offs
         <g class="body">
           <circle cx="284" cy="194" r="66" fill="var(--kick)"/>
           <circle cx="284" cy="194" r="57" fill="#1f1d19"/>
-          <path d="M262 206 A22 22 0 0 1 306 206" fill="none" stroke="var(--sun)" stroke-width="3.5" stroke-linecap="round"/>
-          <line x1="256" y1="206" x2="312" y2="206" stroke="var(--sun)" stroke-width="3.5" stroke-linecap="round"/>
+          <circle cx="284" cy="186" r="13" fill="none" stroke="var(--sun)" stroke-width="3.5"/>
           <g stroke="var(--sun)" stroke-width="3" stroke-linecap="round">
-            <line x1="284" y1="170" x2="284" y2="162"/><line x1="267" y1="176" x2="262" y2="170"/><line x1="301" y1="176" x2="306" y2="170"/>
+            <line x1="284" y1="166" x2="284" y2="159"/><line x1="284" y1="206" x2="284" y2="213"/>
+            <line x1="264" y1="186" x2="257" y2="186"/><line x1="304" y1="186" x2="311" y2="186"/>
+            <line x1="270" y1="172" x2="265" y2="167"/><line x1="298" y1="172" x2="303" y2="167"/>
+            <line x1="270" y1="200" x2="265" y2="205"/><line x1="298" y1="200" x2="303" y2="205"/>
           </g>
         </g>
         <circle cx="336" cy="138" r="11" fill="var(--kick)"/><text class="num" x="336" y="138" style="fill:#fff">4</text>
@@ -294,7 +300,7 @@ input[type="text"]:focus-visible { outline: 3px solid var(--snare); outline-offs
   </div>
   <div class="opts">
     <p class="status" id="status" role="status">Тапай по барабанах або тисни клавіші 1–4.</p>
-    <button class="toggle" id="metro" type="button" role="switch" aria-checked="true"><i></i>Метроном</button>
+    <button class="toggle" id="metro" type="button" role="switch" aria-checked="true"><i></i>Звук метронома</button>
   </div>
 
   <footer class="links">
@@ -540,6 +546,28 @@ async function startGame() {
   later(listen, 350);
 }
 
+/* Visual metronome: a dot that flashes on every beat (ctx times), in sync with the clicks */
+let beatQ = [], beatLoop = false;
+function flashDot(accent) {
+  const d = $('mdot'); d.classList.add('flash'); d.classList.toggle('accent', !!accent);
+  setTimeout(() => d.classList.remove('flash', 'accent'), 110);
+}
+function queueBeats(times) {
+  beatQ.push(...times); beatQ.sort((a, b) => a - b);
+  if (beatLoop) return;
+  beatLoop = true;
+  const loop = (now) => {
+    if (!beatQ.length) { beatLoop = false; return; }
+    const at = audioNow(now);
+    let fired = false;
+    while (beatQ.length && at >= beatQ[0] - 0.01) { beatQ.shift(); fired = true; }
+    if (fired) flashDot(false);
+    requestAnimationFrame(loop);
+  };
+  requestAnimationFrame(loop);
+}
+function clearBeats() { beatQ = []; }
+
 function listen() {
   if (!game) return;
   phase = 'listen';
@@ -556,6 +584,7 @@ function listen() {
   click(t0, true); click(t0 + game.beat, false);
   const start = t0 + 2 * game.beat;
   game.seq.forEach((d, i) => playDrum(d, start + i * game.beat));
+  queueBeats([t0, t0 + game.beat, ...game.seq.map((d, i) => start + i * game.beat)]);
   const marks = game.seq.map((d, i) => ({ t: start + i * game.beat, d, i, done: false }));
   const endAt = start + game.seq.length * game.beat;
   const tick = (now) => {
@@ -609,6 +638,9 @@ function hit(i, perf) {
   if (pos === 0) {
     game.firstAt = perf;
     if (metro) for (let k = 1; k < game.seq.length; k++) click(ctx.currentTime + k * game.beat, false);
+    flashDot(true);
+    const now = ctx.currentTime;
+    queueBeats(Array.from({ length: game.seq.length - 1 }, (_, k) => now + (k + 1) * game.beat));
   } else {
     const expected = game.firstAt + pos * game.beat * 1000;
     const dev = Math.abs(perf - expected) / 1000;
@@ -639,6 +671,7 @@ function roundDone() {
 
 function mistake(pos, want) {
   phase = 'pause';
+  clearBeats();
   game.lives -= 1;
   game.mistakes[want] += 1;
   const el = beatEl(pos);
@@ -655,7 +688,7 @@ function mistake(pos, want) {
 
 function gameOver() {
   const g = game;
-  phase = 'idle'; game = null; clearTimers();
+  phase = 'idle'; game = null; clearTimers(); clearBeats();
   lockModes(false);
   $('btn-start').disabled = false; $('btn-stop').disabled = true; $('btn-start').textContent = 'Почати';
   kit.classList.remove('dim');
@@ -670,7 +703,7 @@ function gameOver() {
 function stopGame() {
   if (!game) return;
   clearTimers();
-  phase = 'idle'; game = null;
+  phase = 'idle'; game = null; clearBeats();
   lockModes(false);
   $('btn-start').disabled = false; $('btn-stop').disabled = true; $('btn-start').textContent = 'Почати';
   kit.classList.remove('dim');
