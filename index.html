@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<script defer src="https://cloud.umami.is/script.js" data-website-id="41ebbb7b-39a4-490c-b748-1b4c177747cc" data-domains="max-vorozhko.github.io"></script>
 <title>Повтори ритм Rankova</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <meta name="description" content="Гра Rankova Studio: послухай ритм на барабанах і повтори його в такт.">
@@ -306,7 +307,7 @@ input[type="text"]:focus-visible { outline: 3px solid var(--snare); outline-offs
   <footer class="links">
     <button class="btn" id="btn-board" type="button">Таблиця лідерів</button>
     <button class="btn" id="btn-rules" type="button">Як грати</button>
-    <a class="btn primary wide" id="book" href="https://n813529.alteg.io/" target="_blank" rel="noopener">Записатись на урок</a>
+    <a class="btn primary wide" id="book" data-umami-event="Запис на урок" data-umami-event-game="repeat-rhythm" href="https://n813529.alteg.io/" target="_blank" rel="noopener">Записатись на урок</a>
     <a class="back wide" href="https://max-vorozhko.github.io/rankova_usefull/">← Усі ігри Rankova Studio</a>
   </footer>
 </div>
@@ -393,6 +394,7 @@ const START_LEN = 3, LIVES = 3, STICKER_AT = 10;
 const IN_TIME = 0.15; // fraction of a beat that still counts as "in time"
 
 const $ = id => document.getElementById(id);
+const track = (name, data) => { try { if (window.umami) window.umami.track(name, data); } catch (e) { /* analytics is optional */ } };
 const store = {
   get(k, d) { try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } },
   set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* storage unavailable */ } }
@@ -530,6 +532,7 @@ function nextDrum(seq) {
 /* ---------- Game flow ---------- */
 async function startGame() {
   if (phase !== 'idle') return;
+  track('Ритм: старт', { mode: mode.id });
   ensureCtx();
   try { await ctx.resume(); } catch (e) { /* ignore */ }
   const seq = [];
@@ -693,6 +696,7 @@ function gameOver() {
   $('btn-start').disabled = false; $('btn-stop').disabled = true; $('btn-start').textContent = 'Почати';
   kit.classList.remove('dim');
   if (g.best > personalBest()) store.set('rm_best_' + mode.id, g.best);
+  track('Ритм: кінець гри', { mode: mode.id, best: g.best });
   showResult(g);
   say('Слухай і повторюй');
   status('Тапай по барабанах або тисни клавіші 1–4.');
